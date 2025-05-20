@@ -1,0 +1,116 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Grid,
+  Typography,
+  Alert,
+  Snackbar
+} from '@mui/material';
+import axios from 'axios';
+
+const initialForm = {
+  lenderName: '',
+  state: '',
+  city: '',
+  managerName: '',
+  bankerName: '',
+  email: '',
+  rmName: '',
+  rmContact: '',
+  asmName: '',
+  asmContact: '',
+  rsmName: '',
+  rsmContact: '',
+  zsmName: ''
+};
+
+const LenderForm = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [form, setForm] = useState(initialForm);
+  const [error, setError] = useState('');
+  const [successOpen, setSuccessOpen] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.lenderName.trim()) {
+      setError('Lender Name is required.');
+      return;
+    }
+
+  try {
+  const res = await axios.post(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/lenders/create-lender`,
+    form
+  );
+      
+      console.log('Lender created:', res.data);
+
+      setSuccessOpen(true);
+      setForm(initialForm); // Reset using initialForm for consistency
+      setError('');
+      onSuccess();
+    } catch (err: any) {
+      console.error('Submit error:', err.response?.data || err.message);
+      const message = err?.response?.data?.message || 'Something went wrong';
+      setError(Array.isArray(message) ? message.join(', ') : message);
+    }
+  };
+
+  return (
+    <Box p={3}>
+      <Typography variant="h5" gutterBottom>
+        Add New Lender
+      </Typography>
+
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <Grid container spacing={2}>
+        {[
+          { name: 'lenderName', label: 'Lender Name' },
+          { name: 'state', label: 'State' },
+          { name: 'city', label: 'City' },
+          { name: 'managerName', label: 'Manager Name' },
+          { name: 'bankerName', label: 'Banker Name' },
+          { name: 'email', label: 'Email' },
+          { name: 'rmName', label: 'RM Name' },
+          { name: 'rmContact', label: 'RM Contact No' },
+          { name: 'asmName', label: 'ASM Name' },
+          { name: 'asmContact', label: 'ASM Contact No' },
+          { name: 'rsmName', label: 'RSM Name' },
+          { name: 'rsmContact', label: 'RSM Contact No' },
+          { name: 'zsmName', label: 'ZSM Name' }
+        ].map((field) => (
+          <Grid item xs={12} sm={6} key={field.name}>
+            <TextField
+              fullWidth
+              label={field.label}
+              name={field.name}
+              value={form[field.name as keyof typeof form]}
+              onChange={handleChange}
+            />
+          </Grid>
+        ))}
+
+        <Grid item xs={12}>
+          <Button variant="contained" onClick={handleSubmit}>
+            Submit
+          </Button>
+        </Grid>
+      </Grid>
+
+      <Snackbar
+        open={successOpen}
+        autoHideDuration={3000}
+        onClose={() => setSuccessOpen(false)}
+        message="Lender added successfully!"
+      />
+    </Box>
+  );
+};
+
+export default LenderForm;
