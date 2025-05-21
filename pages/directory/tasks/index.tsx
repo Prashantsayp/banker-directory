@@ -31,15 +31,16 @@ const BankerOverview = () => {
   const [searchBanker, setSearchBanker] = useState('');
 
 
- useEffect(() => {
+useEffect(() => {
   axios
-    .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
+    .get('http://3.25.110.0:3001/banker-directory/get-directories')
     .then((res) => {
       setBankers(res.data);
       setFilteredBankers(res.data);
     })
     .catch((err) => console.error('Error fetching bankers:', err));
 }, []);
+
 
   // Filter bankers based on the search term (either location or banker name)
   useEffect(() => {
