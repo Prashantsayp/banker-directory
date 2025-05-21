@@ -35,7 +35,7 @@ useEffect(() => {
   console.log('📡 Calling API directly');
 
   axios
-    .get('${process.env.NEXT_PUBLIC_BACKEND_URL}/api/banker-directory/get-directories')
+    .get('${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories')
     .then((res) => {
       console.log('✅ Fetched data:', res.data);
       setBankers(res.data);
