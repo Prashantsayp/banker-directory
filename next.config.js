@@ -1,6 +1,6 @@
 const withImages = require('next-images');
 
-const redirects = {
+const config = {
   async redirects() {
     return [
       {
@@ -9,7 +9,16 @@ const redirects = {
         permanent: true
       }
     ];
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/bankers',
+        destination: 'http://3.25.110.0:3001/banker-directory/get-directories'
+      }
+    ];
   }
 };
 
-module.exports = withImages(redirects);
+module.exports = withImages(config);
