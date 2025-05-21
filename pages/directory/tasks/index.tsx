@@ -32,6 +32,7 @@ const BankerOverview = () => {
 
 
  useEffect(() => {
+     console.log('API URL:', `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`);
   axios
     .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
     .then((res) => {
@@ -40,7 +41,7 @@ const BankerOverview = () => {
     })
     .catch((err) => console.error('Error fetching bankers:', err));
 }, []);
-  console.log('API URL:', `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`);
+
 
 
   // Filter bankers based on the search term (either location or banker name)
