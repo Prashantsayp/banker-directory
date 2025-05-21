@@ -1,3 +1,4 @@
+
 import {
   Typography,
   Button,
@@ -5,7 +6,7 @@ import {
   Avatar,
   styled,
   Dialog,
-  DialogTitle, 
+  DialogTitle,
   DialogContent,
   IconButton
 } from '@mui/material';
@@ -15,7 +16,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import DirectoryForm from './DirectoryForm';
-import LenderForm from './LenderForm'; 
+import LenderForm from './LenderForm';
 import BankerDirectoryForm from './BankerDirectoryForm';
 
 const AvatarPageTitle = styled(Avatar)(
@@ -45,9 +46,9 @@ function PageHeader({ onCreated }: { onCreated: () => void }) {
 
   const pathname = router.pathname;
 
-  // Logic to determine form type and labels
-  const isLenderRoute = pathname.includes('/lender');
-  const isBankerRoute = pathname.includes('/directory'); 
+  // ✅ Updated logic for better live route detection
+  const isLenderRoute = pathname.includes('lender');
+  const isBankerRoute = pathname.includes('banker') || pathname.includes('directory');
 
   const buttonLabel = isLenderRoute
     ? 'Add Lender'
@@ -77,9 +78,7 @@ function PageHeader({ onCreated }: { onCreated: () => void }) {
             <Typography variant="h3" component="h3" gutterBottom>
               Welcome, F2 Fintech!
             </Typography>
-            <Typography variant="subtitle2">
-              "Manage your Directory"
-            </Typography>
+            <Typography variant="subtitle2">"Manage your Directory"</Typography>
           </Box>
         </Box>
         <Box mt={{ xs: 3, md: 0 }}>
@@ -93,7 +92,7 @@ function PageHeader({ onCreated }: { onCreated: () => void }) {
         </Box>
       </Box>
 
-      {/* Modal */}
+      {/* Modal for Adding Entry */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>
           {dialogTitle}
