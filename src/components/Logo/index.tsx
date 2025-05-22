@@ -38,7 +38,7 @@ function Logo() {
           marginLeft: 1,
         }}
       >
-        <Tooltip title="Version 1.0" arrow placement="right">
+        
           <Box
             sx={{
               background: (theme) => theme.palette.success.main,

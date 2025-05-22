@@ -78,7 +78,7 @@ function HeaderMenu() {
        
       </ListWrapper>
    
-        <MenuItem sx={{ px: 3 }} component={Link} href="/">
+        {/* <MenuItem sx={{ px: 3 }} component={Link} href="/">
           Overview
         </MenuItem>
         <MenuItem sx={{ px: 3 }} component={Link} href="/components/tabs">
@@ -89,7 +89,7 @@ function HeaderMenu() {
         </MenuItem>
         <MenuItem sx={{ px: 3 }} component={Link} href="/components/modals">
           Modals
-        </MenuItem>
+        </MenuItem> */}
    
     </>
   );

@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/router';
+// import { useRouter } from 'next/router';
 
 interface Lender {
   _id: string;
@@ -17,12 +17,13 @@ interface Lender {
   city: string;
   managerName: string;
   rmName?: string; 
+  bankerName?:string;
   rmContact?: string; 
 }
 
 const LenderOverview = () => {
   const [lenders, setLenders] = useState<Lender[]>([]);
-  const router = useRouter();
+  // const router = useRouter();
 
   useEffect(() => {
     axios
@@ -32,11 +33,11 @@ const LenderOverview = () => {
       .catch((err) => console.error('Error fetching lenders:', err));
   }, []);
 
-  const handleViewMore = () => {
-    router.push(`${process.env.NEXT_PUBLIC_BACKEND_URL}/management/lenders`)
+  // const handleViewMore = () => {
+  //   router.push(`${process.env.NEXT_PUBLIC_BACKEND_URL}/management/lenders`)
   
     
-  };
+  // };
 
   return (
     <Grid container spacing={3}>
@@ -53,16 +54,15 @@ const LenderOverview = () => {
               </Box>
             </Box>
             <Typography variant="body2" gutterBottom>
-              <strong>RM/SM:</strong> {lender.rmName || 'N/A'} ({lender.rmContact || 'N/A'})
+              <strong>Banker Name:</strong> {lender.bankerName || 'N/A'}
             </Typography>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleViewMore}
-              sx={{ mt: 1 }}
-            >
-              View More Details
-            </Button>
+            <Typography variant="body2" gutterBottom>
+              <strong>RM/SM:</strong> {lender.rmName || 'N/A'}
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              <strong>Contact</strong> {lender.rmContact || 'N/A'}
+            </Typography>
+            
           </Paper>
         </Grid>
       ))}

@@ -50,19 +50,13 @@ function LoginPage() {
   const handleLogin = async () => {
     try {
       console.log('Login Payload:', { email: username, password });
-
       const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
       { email: username, password }
       );
-
       const { access_token } = response.data;
       console.log('Access Token:', access_token);
-
-      // Save token if needed
       localStorage.setItem('token', access_token);
-
-      // ✅ Redirect to dashboard
       router.push('/dashboards');
     } catch (error) {
       console.error('Login Error:', error.response || error.message);

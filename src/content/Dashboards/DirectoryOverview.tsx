@@ -34,9 +34,9 @@ const BankerOverview = () => {
       .catch((err) => console.error('Error fetching bankers:', err));
   }, []);
 
-  const handleViewMore = (id: string) => {
-    router.push(`/management/bankers/${id}`);
-  };
+  // const handleViewMore = (id: string) => {
+  //   router.push(`/management/bankers/${id}`);
+  // };
 
   return (
     <Grid container spacing={4} padding={2}>
@@ -87,7 +87,7 @@ const BankerOverview = () => {
               </Typography>
             </Box>
 
-            <Button
+            {/* <Button
               variant="contained"
               color="primary"
               size="small"
@@ -96,7 +96,7 @@ const BankerOverview = () => {
               sx={{ mt: 2 }}
             >
               View More Details
-            </Button>
+            </Button> */}
           </Paper>
         </Grid>
       ))}

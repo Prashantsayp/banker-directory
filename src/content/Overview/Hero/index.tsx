@@ -50,7 +50,7 @@ const StyledButton = styled(Button)(
 function Hero() {
   return (
     <>
-      <Container maxWidth="lg" sx={{ textAlign: 'center', marginTop: '5rem' }}>
+      <Container maxWidth="lg" sx={{ textAlign: 'center', marginTop: '9rem' }}>
         <Grid
           spacing={{ xs: 6, md: 10 }}
           justifyContent="center"
@@ -58,7 +58,7 @@ function Hero() {
           container
         >
           <Grid item md={10} lg={8} mx="auto">
-            <LabelWrapper color="success">Version 1.0.0</LabelWrapper>
+         
             <TypographyH1 sx={{ mb: 2 }} variant="h1">
               Bankers Directory
             </TypographyH1>

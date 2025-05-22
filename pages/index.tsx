@@ -71,7 +71,7 @@ function Overview() {
             display: "flex",
             alignItems: "center", 
             justifyContent: "flex-start", 
-            maxWidth: "140px", 
+            maxWidth: "130px", 
             height: "auto",
             overflow: "hidden",
           }}

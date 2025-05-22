@@ -21,7 +21,7 @@ import PageTitleWrapper from '@/components/PageTitleWrapper';
 
 import TeamOverview from '@/content/Dashboards/Tasks/TeamOverview';
 
-import Performance from '@/content/Dashboards/Tasks/Performance';
+// import Performance from '@/content/Dashboards/Tasks/Performance';
 
 
 
@@ -132,12 +132,12 @@ function DashboardTasks() {
                       <Grid item xs={12} md={8}>
 
                       </Grid>
-                      <Grid item xs={12} md={4}>
+                      {/* <Grid item xs={12} md={4}>
                         <Performance />
-                      </Grid>
+                      </Grid> */}
                     </Grid>
                   </Grid>
-
+{/* 
                   <Grid item xs={12}>
                     <Divider sx={{ my: 2 }} />
                   
@@ -166,7 +166,7 @@ function DashboardTasks() {
                         </Paper>
                       </Grid>
                     </Grid>
-                  </Grid>
+                  </Grid> */}
                 </>
               )}
 {/* 
@@ -188,3 +188,4 @@ function DashboardTasks() {
 DashboardTasks.getLayout = (page) => <SidebarLayout>{page}</SidebarLayout>;
 
 export default DashboardTasks;
+
