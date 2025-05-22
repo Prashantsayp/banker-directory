@@ -7,24 +7,17 @@ import {
   Grid,
   Tab,
   Tabs,
-  Divider,
+ 
   Container,
   Card,
   Box,
-  useTheme,
+
   styled,
-  Paper,
-  Typography,
   Fade
 } from '@mui/material';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
 
 import TeamOverview from '@/content/Dashboards/Tasks/TeamOverview';
-
-// import Performance from '@/content/Dashboards/Tasks/Performance';
-
-
-
 
 import PeopleIcon from '@mui/icons-material/People';
 
@@ -69,12 +62,10 @@ const SectionCard = styled(Card)(({ theme }) => ({
 }));
 
 function DashboardTasks() {
-  const theme = useTheme();
   const [currentTab, setCurrentTab] = useState<string>('bankers');
 
   const tabs = [
     { value: 'bankers', label: 'Overview', icon: <PeopleIcon fontSize="small" /> },
-   
   ];
 
   const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
@@ -88,8 +79,7 @@ function DashboardTasks() {
       </Head>
 
       <PageTitleWrapper>
-       <PageHeader onCreated={() => {}} />
-
+        <PageHeader onCreated={() => {}} />
       </PageTitleWrapper>
 
       <Container maxWidth="lg">
@@ -125,56 +115,8 @@ function DashboardTasks() {
                   <Grid item xs={12}>
                     <TeamOverview />
                   </Grid>
-
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={8}>
-
-                      </Grid>
-                      {/* <Grid item xs={12} md={4}>
-                        <Performance />
-                      </Grid> */}
-                    </Grid>
-                  </Grid>
-{/* 
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                  
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
-                     
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Paper
-                          elevation={4}
-                          sx={{
-                            p: 3,
-                            backgroundColor: theme.palette.grey[100],
-                            borderRadius: 2,
-                            height: '100%'
-                          }}
-                        >
-                          <Typography variant="h6" gutterBottom>
-                            Banker Profile
-                          </Typography>
-                         
-                        </Paper>
-                      </Grid>
-                    </Grid>
-                  </Grid> */}
                 </>
               )}
-{/* 
-              {currentTab === 'bankersSearch' && (
-                <Grid item xs={12}>
-                  <TaskSearch />
-                </Grid>
-              )} */}
             </Grid>
           </SectionCard>
         </Fade>
@@ -188,4 +130,3 @@ function DashboardTasks() {
 DashboardTasks.getLayout = (page) => <SidebarLayout>{page}</SidebarLayout>;
 
 export default DashboardTasks;
-

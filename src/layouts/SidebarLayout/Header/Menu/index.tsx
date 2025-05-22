@@ -1,12 +1,7 @@
 import {
   Box,
- 
-
-  MenuItem,
   styled
 } from '@mui/material';
-
-import Link from 'src/components/Link';
 
 const ListWrapper = styled(Box)(
   ({ theme }) => `
@@ -78,18 +73,7 @@ function HeaderMenu() {
        
       </ListWrapper>
    
-        {/* <MenuItem sx={{ px: 3 }} component={Link} href="/">
-          Overview
-        </MenuItem>
-        <MenuItem sx={{ px: 3 }} component={Link} href="/components/tabs">
-          Tabs
-        </MenuItem>
-        <MenuItem sx={{ px: 3 }} component={Link} href="/components/cards">
-          Cards
-        </MenuItem>
-        <MenuItem sx={{ px: 3 }} component={Link} href="/components/modals">
-          Modals
-        </MenuItem> */}
+     
    
     </>
   );

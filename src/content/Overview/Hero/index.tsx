@@ -20,21 +20,7 @@ const TypographyH2 = styled(Typography)(
 `
 );
 
-const LabelWrapper = styled(Box)(
-  ({ theme }) => `
-    background-color: ${theme.colors.success.main};
-    color: ${theme.palette.success.contrastText};
-    font-weight: bold;
-    border-radius: 30px;
-    text-transform: uppercase;
-    display: inline-block;
-    font-size: ${theme.typography.pxToRem(11)};
-    padding: ${theme.spacing(0.5)} ${theme.spacing(1.5)};
-    margin-bottom: ${theme.spacing(2)};
-`
-);
 
-// 3D Button styling with reduced padding
 const StyledButton = styled(Button)(
   ({ theme }) => `
     box-shadow: 0 4px ${theme.palette.grey[500]};

@@ -3,12 +3,11 @@ import {
   Grid,
   Typography,
   Avatar,
-  Paper,
-  Button
+  Paper
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-// import { useRouter } from 'next/router';
+
 
 interface Lender {
   _id: string;
@@ -23,7 +22,7 @@ interface Lender {
 
 const LenderOverview = () => {
   const [lenders, setLenders] = useState<Lender[]>([]);
-  // const router = useRouter();
+
 
   useEffect(() => {
     axios
@@ -33,11 +32,7 @@ const LenderOverview = () => {
       .catch((err) => console.error('Error fetching lenders:', err));
   }, []);
 
-  // const handleViewMore = () => {
-  //   router.push(`${process.env.NEXT_PUBLIC_BACKEND_URL}/management/lenders`)
-  
-    
-  // };
+
 
   return (
     <Grid container spacing={3}>

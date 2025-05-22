@@ -1,4 +1,4 @@
-import { Box, styled, Tooltip } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import Link from 'src/components/Link';
 
 const LogoWrapper = styled(Link)(
@@ -53,7 +53,7 @@ function Logo() {
           >
             1.0
           </Box>
-        </Tooltip>
+       
         <Box
           sx={{
             fontSize: (theme) => theme.typography.pxToRem(15),

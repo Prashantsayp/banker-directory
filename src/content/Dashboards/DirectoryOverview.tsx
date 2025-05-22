@@ -4,14 +4,13 @@ import {
   Typography,
   Avatar,
   Paper,
-  Button,
+ 
   Chip,
   Divider,
   Stack
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/router';
 
 interface Banker {
   _id: string;
@@ -26,7 +25,7 @@ interface Banker {
 
 const BankerOverview = () => {
   const [bankers, setBankers] = useState<Banker[]>([]);
-  const router = useRouter();
+  
 
   useEffect(() => {
    axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
@@ -34,9 +33,7 @@ const BankerOverview = () => {
       .catch((err) => console.error('Error fetching bankers:', err));
   }, []);
 
-  // const handleViewMore = (id: string) => {
-  //   router.push(`/management/bankers/${id}`);
-  // };
+
 
   return (
     <Grid container spacing={4} padding={2}>
@@ -87,16 +84,7 @@ const BankerOverview = () => {
               </Typography>
             </Box>
 
-            {/* <Button
-              variant="contained"
-              color="primary"
-              size="small"
-              fullWidth
-              onClick={() => handleViewMore(banker._id)}
-              sx={{ mt: 2 }}
-            >
-              View More Details
-            </Button> */}
+         
           </Paper>
         </Grid>
       ))}
