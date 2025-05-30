@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import PhoneTwoToneIcon from '@mui/icons-material/PhoneTwoTone';
 import EmailTwoToneIcon from '@mui/icons-material/EmailTwoTone';
-import BusinessTwoToneIcon from '@mui/icons-material/BusinessTwoTone';
 import LocationOnTwoToneIcon from '@mui/icons-material/LocationOnTwoTone';
 import CalendarMonthTwoToneIcon from '@mui/icons-material/CalendarMonthTwoTone';
 import WorkHistoryTwoToneIcon from '@mui/icons-material/WorkHistoryTwoTone';
@@ -81,7 +80,7 @@ const TeamOverview = () => {
                 {member.fullName}
               </Typography>
               <Typography variant="subtitle2" color="text.secondary">
-                {member.designation} @ {member.currentInstitutionName}
+                {member.designation} 
               </Typography>
 
               <Box display="flex" justifyContent="center" mt={2} mb={1}>
@@ -103,9 +102,9 @@ const TeamOverview = () => {
             <Stack spacing={1}>
               <InfoRow icon={<CalendarMonthTwoToneIcon />} label="Join Date" value={new Date(member.dateOfJoining).toLocaleDateString()} />
               <InfoRow icon={<WorkHistoryTwoToneIcon />} label="Experience" value={member.totalExperience} />
-              <InfoRow icon={<BusinessTwoToneIcon />} label="Bank" value={member.bankName} />
               <InfoRow icon={<EmailTwoToneIcon />} label="Email" value={member.email} />
               <InfoRow icon={<LocationOnTwoToneIcon />} label="Location" value={member.location} />
+              
             </Stack>
           </Paper>
         </Grid>

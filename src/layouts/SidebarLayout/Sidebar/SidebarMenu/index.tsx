@@ -19,7 +19,6 @@ import MmsTwoToneIcon from '@mui/icons-material/MmsTwoTone';
 import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
 import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
 
-import DisplaySettingsTwoToneIcon from '@mui/icons-material/DisplaySettingsTwoTone';
 
 const MenuWrapper = styled(Box)(
   ({ theme }) => `
@@ -303,7 +302,7 @@ function SidebarMenu() {
                   </Button>
                 </NextLink>
               </ListItem>
-              <ListItem component="div">
+              {/* <ListItem component="div">
                 <NextLink href="/management/profile/settings" passHref>
                   <Button
                     className={
@@ -319,7 +318,7 @@ function SidebarMenu() {
                     Account Settings
                   </Button>
                 </NextLink>
-              </ListItem>
+              </ListItem> */}
             </List>
           </SubMenuWrapper>
         </List>

@@ -161,7 +161,7 @@ useEffect(() => {
             <Divider sx={{ mb: 2 }} />
 
             <Typography variant="subtitle2" gutterBottom>
-              Location Categories:
+              Location Serve:
             </Typography>
             <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
               {banker.locationCategories.map((loc, index) => (

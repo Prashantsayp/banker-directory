@@ -14,14 +14,14 @@ import Addresses from '@/content/Management/Users/details/Addresses';
 function ManagementUserProfile() {
   const user = {
     savedCards: 7,
-    name: 'Ambuj',
+    name: 'F2 Fintech',
     coverImg: '/static/images/placeholders/covers/5.jpg',
-    avatar: '/static/images/avatars/4.jpg',
+    avatar: '/static/images/logo/f2fin.png',
     description:
       "Asm at bajaj finserve in delhi-NCR",
     jobtitle: 'ASM',
     location: 'Delhi-NCR',
-    followers: '1065'
+    followers: 1065
   };
 
   return (
@@ -38,7 +38,7 @@ function ManagementUserProfile() {
           spacing={3}
         >
           <Grid item xs={12} md={8}>
-            <ProfileCover user={user} />
+           <ProfileCover user={user} />
           </Grid>
           <Grid item xs={12} md={4}>
             <RecentActivity />

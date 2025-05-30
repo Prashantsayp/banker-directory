@@ -13,40 +13,40 @@ import AddTwoToneIcon from '@mui/icons-material/AddTwoTone';
 
 function Feed() {
   const feed = [
-    {
-      name: 'Munroe Dacks',
-      jobtitle: 'Senior Accountant',
-      company: 'Trudoo',
+     {
+      name: 'Harpreet Kaur',
+      jobtitle: 'Financial Analyst',
+      company: 'Infosys',
       avatar: '/static/images/avatars/1.jpg'
     },
     {
-      name: 'Gunilla Canario',
-      jobtitle: 'Associate Professor',
-      company: 'Buzzdog',
+      name: 'Ravi Verma',
+      jobtitle: 'Software Engineer',
+      company: 'TCS',
       avatar: '/static/images/avatars/2.jpg'
     },
     {
-      name: 'Rowena Geistmann',
-      jobtitle: 'Pharmacist',
-      company: 'Yozio',
+      name: 'Neha Sharma',
+      jobtitle: 'Marketing Manager',
+      company: 'HDFC Bank',
       avatar: '/static/images/avatars/3.jpg'
     },
     {
-      name: 'Ede Stoving',
-      jobtitle: 'VP Operations',
-      company: 'Cogibox',
+      name: 'Amit Dubey',
+      jobtitle: 'Operations Head',
+      company: 'Wipro',
       avatar: '/static/images/avatars/4.jpg'
     },
     {
-      name: 'Crissy Spere',
-      jobtitle: 'Social Worker',
-      company: 'Babbleblab',
+      name: 'Sneha Iyer',
+      jobtitle: 'Human Resources',
+      company: 'Reliance Industries',
       avatar: '/static/images/avatars/5.jpg'
     },
     {
-      name: 'Michel Greatbanks',
-      jobtitle: 'Research Assistant III',
-      company: 'Aimbu',
+      name: 'Vikram Mehta',
+      jobtitle: 'Data Scientist',
+      company: 'Zoho',
       avatar: '/static/images/avatars/6.jpg'
     }
   ];
