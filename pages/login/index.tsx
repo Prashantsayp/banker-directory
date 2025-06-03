@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import Link from 'next/link';
 
 // Styled Button with 3D effect
 const StyledButton = styled(Button)(
@@ -179,6 +180,16 @@ function LoginPage() {
                 Login
               </StyledButton>
             </Box>
+<Typography sx={{ color: '#B0BEC5', mt: 2 }}>
+  Don’t have an account?{' '}
+  <Link href="/signup" passHref>
+    <Typography component="a" sx={{ color: '#1a73e8', textDecoration: 'none', cursor: 'pointer' }}>
+      Sign up
+    </Typography>
+  </Link>
+</Typography>
+
+
           </Box>
         </Container>
       </Box>

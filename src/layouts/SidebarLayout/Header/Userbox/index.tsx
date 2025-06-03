@@ -1,6 +1,9 @@
-// components/HeaderUserbox.tsx
-import { useRef, useState } from 'react';
+'use client';
+
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import axios from 'axios';
+
 import {
   Avatar,
   Box,
@@ -42,14 +45,54 @@ const UserBoxDescription = styled(Typography)(({ theme }) => `
 `);
 
 function HeaderUserbox() {
-  const user = {
-    name: 'F2 Fintech',
-    avatar: '/static/images/logo/f2fin.png'
-  };
-
   const router = useRouter();
   const ref = useRef<any>(null);
   const [isOpen, setOpen] = useState(false);
+  const [userName, setUserName] = useState<string>('Loading...');
+
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.warn("No token found in localStorage");
+    return;
+  }
+
+  try {
+    const decodedPayload = JSON.parse(atob(token.split('.')[1])); // decode JWT payload
+    const email = decodedPayload?.email;
+
+   
+
+    if (email) {
+      
+       axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile-by-email/${email}`, {
+
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        .then((res) => {
+          const fullName = res.data.fullName || 'User';
+          const nameParts = fullName.trim().split(' ');
+          let initials = 'U';
+          if (nameParts.length >= 2) {
+            initials =
+              nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
+          } else if (nameParts.length === 1) {
+            initials = nameParts[0][0].toUpperCase();
+          }
+          setUserName(initials);
+        })
+        .catch((err) => {
+          console.error('Error fetching profile:', err);
+          setUserName('U');
+        });
+    }
+  } catch (err) {
+    console.error('Token decode error:', err);
+  }
+}, []);
+
 
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
@@ -62,10 +105,10 @@ function HeaderUserbox() {
   return (
     <>
       <UserBoxButton color="secondary" ref={ref} onClick={handleOpen}>
-        <Avatar variant="rounded" alt={user.name} src={user.avatar} />
+        <Avatar variant="rounded" alt={userName} src="/static/images/logo/f2fin.png" />
         <Hidden mdDown>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{user.name}</UserBoxLabel>
+            <UserBoxLabel variant="body1">{userName}</UserBoxLabel>
           </UserBoxText>
         </Hidden>
         <Hidden smDown>
@@ -88,10 +131,8 @@ function HeaderUserbox() {
       >
         <MenuUserBox sx={{ minWidth: 210 }}>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{user.name}</UserBoxLabel>
-            <UserBoxDescription variant="body2">
-              Logged in
-            </UserBoxDescription>
+            <UserBoxLabel variant="body1">{userName}</UserBoxLabel>
+            <UserBoxDescription variant="body2">Logged in</UserBoxDescription>
           </UserBoxText>
         </MenuUserBox>
 
