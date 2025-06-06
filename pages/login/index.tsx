@@ -14,7 +14,8 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
 
-// Styled Button with 3D effect
+
+
 const StyledButton = styled(Button)(
   ({ theme }) => `
     background-color: #1a73e8;
@@ -58,7 +59,7 @@ function LoginPage() {
       const { access_token } = response.data;
       console.log('Access Token:', access_token);
       localStorage.setItem('token', access_token);
-      router.push('/dashboards');
+      router.push('/directory/tasks');
     } catch (error) {
       console.error('Login Error:', error.response || error.message);
       setErrorMessage(

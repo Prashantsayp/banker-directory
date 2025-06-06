@@ -3,15 +3,29 @@ import SidebarLayout from '@/layouts/SidebarLayout';
 import { ChangeEvent, useState, useEffect } from 'react';
 import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
 import Footer from '@/components/Footer';
-import { Box, Grid, Tab, Tabs, Typography, Avatar, Paper, Chip, Divider, Stack, TextField, Container, Card, InputAdornment } from '@mui/material';
-
+import {
+  Box,
+  Grid,
+  Tab,
+  Tabs,
+  Typography,
+  Avatar,
+  Paper,
+  Chip,
+  Divider,
+  Stack,
+  TextField,
+  Container,
+  Card,
+  InputAdornment
+} from '@mui/material';
 import axios from 'axios';
-
 import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { styled } from '@mui/material/styles';
-import ClearIcon from '@mui/icons-material/Clear'; 
+import ClearIcon from '@mui/icons-material/Clear';
 
-// Define the interface for Banker
+import { jwtDecode } from 'jwt-decode';
+
 interface Banker {
   _id: string;
   bankerName: string;
@@ -23,120 +37,96 @@ interface Banker {
   product: string[];
 }
 
-
 const BankerOverview = () => {
   const [bankers, setBankers] = useState<Banker[]>([]);
   const [filteredBankers, setFilteredBankers] = useState<Banker[]>([]);
   const [searchLocation, setSearchLocation] = useState('');
   const [searchBanker, setSearchBanker] = useState('');
+  const [searchAssociatedWith, setSearchAssociatedWith] = useState('');
 
-
-useEffect(() => {
-  axios
-    .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
-    .then((res) => {
-      console.log('✅ Fetched data:', res.data);
-      setBankers(res.data);
-      setFilteredBankers(res.data);
-    })
-    .catch((err) => console.error('❌ Error:', err));
-}, []);
-
-
-
-  // Filter bankers based on the search term (either location or banker name)
   useEffect(() => {
-    if (searchLocation) {
-      const filtered = bankers.filter((banker) =>
-        banker.locationCategories.some((location) =>
-          location.toLowerCase().includes(searchLocation.toLowerCase())
-        )
-      );
-      setFilteredBankers(filtered);
-    } else if (searchBanker) {
-      const filtered = bankers.filter((banker) =>
-        banker.bankerName.toLowerCase().includes(searchBanker.toLowerCase())
-      );
-      setFilteredBankers(filtered);
-    } else {
-      setFilteredBankers(bankers);
-    }
-  }, [searchLocation, searchBanker, bankers]);
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
+      .then((res) => {
+        setBankers(res.data);
+        setFilteredBankers(res.data);
+      })
+      .catch((err) => console.error('❌ Error:', err));
+  }, []);
 
-  // Functions to handle search inputs
-  const handleSearchLocation = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchLocation(event.target.value);
-    setSearchBanker(''); 
-  };
+  useEffect(() => {
+    const filtered = bankers.filter((banker) => {
+      const matchesLocation = searchLocation
+        ? banker.locationCategories.some((location) =>
+            location.toLowerCase().includes(searchLocation.toLowerCase())
+          )
+        : true;
 
-  const handleClearSearchLocation = () => {
-    setSearchLocation('');
-    setFilteredBankers(bankers);
-  };
+      const matchesBanker = searchBanker
+        ? banker.bankerName.toLowerCase().includes(searchBanker.toLowerCase())
+        : true;
 
-  const handleSearchBanker = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchBanker(event.target.value);
-    setSearchLocation(''); 
-  };
+      const matchesAssociatedWith = searchAssociatedWith
+        ? banker.associatedWith.toLowerCase().includes(searchAssociatedWith.toLowerCase())
+        : true;
 
-  const handleClearSearchBanker = () => {
-    setSearchBanker('');
-    setFilteredBankers(bankers);
+      return matchesLocation && matchesBanker && matchesAssociatedWith;
+    });
+
+    setFilteredBankers(filtered);
+  }, [searchLocation, searchBanker, searchAssociatedWith, bankers]);
+
+  const handleClearSearch = (type: 'location' | 'banker' | 'associated') => {
+    if (type === 'location') setSearchLocation('');
+    if (type === 'banker') setSearchBanker('');
+    if (type === 'associated') setSearchAssociatedWith('');
   };
 
   return (
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
-        <Box display="flex" gap={2}>
-          {/* Search bar to filter bankers by location */}
+        <Box display="flex" gap={2} flexWrap="wrap">
           <TextField
             label="Search by Location"
             variant="outlined"
             value={searchLocation}
-            onChange={handleSearchLocation}
-            sx={{ mb: 1, maxWidth: 400 }}
+            onChange={(e) => setSearchLocation(e.target.value)}
+            sx={{ mb: 1, maxWidth: 250 }}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Typography>🔍</Typography>
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  {searchLocation && (
-                    <ClearIcon
-                      onClick={handleClearSearchLocation}
-                      sx={{ cursor: 'pointer', color: 'text.secondary' }}
-                    />
-                  )}
-                </InputAdornment>
-              ),
+              startAdornment: <InputAdornment position="start">📍</InputAdornment>,
+              endAdornment: searchLocation && (
+                <ClearIcon onClick={() => handleClearSearch('location')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )
             }}
             fullWidth
           />
-          {/* Search bar to filter bankers by Banker*/}
+
+          <TextField
+            label="Search by Associated With"
+            variant="outlined"
+            value={searchAssociatedWith}
+            onChange={(e) => setSearchAssociatedWith(e.target.value)}
+            sx={{ mb: 1, maxWidth: 250 }}
+            InputProps={{
+              startAdornment: <InputAdornment position="start">🏦</InputAdornment>,
+              endAdornment: searchAssociatedWith && (
+                <ClearIcon onClick={() => handleClearSearch('associated')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )
+            }}
+            fullWidth
+          />
+
           <TextField
             label="Search by Banker"
             variant="outlined"
             value={searchBanker}
-            onChange={handleSearchBanker}
-            sx={{ mb: 1, maxWidth: 400 }}
+            onChange={(e) => setSearchBanker(e.target.value)}
+            sx={{ mb: 1, maxWidth: 250 }}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Typography>🔍</Typography>
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  {searchBanker && (
-                    <ClearIcon
-                      onClick={handleClearSearchBanker}
-                      sx={{ cursor: 'pointer', color: 'text.secondary' }}
-                    />
-                  )}
-                </InputAdornment>
-              ),
+              startAdornment: <InputAdornment position="start">👤</InputAdornment>,
+              endAdornment: searchBanker && (
+                <ClearIcon onClick={() => handleClearSearch('banker')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )
             }}
             fullWidth
           />
@@ -196,25 +186,42 @@ useEffect(() => {
   );
 };
 
-// Main page wrapper with tabs and layout
 const TabsContainerWrapper = styled(Box)(({ theme }) => ({
   padding: `0 ${theme.spacing(2)}`,
   position: 'relative',
-  bottom: '-1px',
+  bottom: '-1px'
 }));
 
 const LendersTasks = () => {
   const [currentTab, setCurrentTab] = useState<string>('overview');
+  const [role, setRole] = useState<string | null>(null);
+ 
 
-
-  const tabs = [
-    { value: 'overview', label: 'Bankers Directory' },
-    // { value: 'search', label: 'Search Directories' }
-  ];
+  const tabs = [{ value: 'overview', label: 'Bankers Directory' }];
 
   const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
     setCurrentTab(value);
   };
+
+  useEffect(() => {
+   const getUserRole = (): string | null => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const decoded: any = jwtDecode(token); 
+    console.log("✅ Decoded Role:", decoded.role);
+    return decoded.role ?? null;
+  } catch (err) {
+    console.error("❌ JWT Decode Failed:", err);
+    return null;
+  }
+};
+
+    const userRole = getUserRole();
+    console.log("✅ Decoded Role:", userRole);
+    setRole(userRole);
+  }, []);
 
   return (
     <>
@@ -222,7 +229,12 @@ const LendersTasks = () => {
         <title>Bankers Directory</title>
       </Head>
       <PageTitleWrapper>
-        <PageHeader onCreated={() => window.location.reload()} />
+        {role && (
+          <PageHeader
+            onCreated={() => window.location.reload()}
+            showAddButton={['admin'].includes(role)}
+          />
+        )}
       </PageTitleWrapper>
       <Container maxWidth="lg">
         <TabsContainerWrapper>
@@ -239,7 +251,8 @@ const LendersTasks = () => {
             ))}
           </Tabs>
         </TabsContainerWrapper>
-        <Card variant="outlined">
+
+        <Card variant="outlined" sx={{ mt: 2 }}>
           <Grid container>
             {currentTab === 'overview' && (
               <Grid item xs={12}>

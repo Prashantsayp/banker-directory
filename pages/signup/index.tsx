@@ -165,7 +165,13 @@ function SignupPage() {
 
             <MenuItem value="user">User</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
-        
+            <MenuItem value="lender">Lender</MenuItem>
+            <MenuItem value="banker">Banker</MenuItem>
+            <MenuItem value="channe partner">Channel Partner</MenuItem>
+            <MenuItem value="dsa">DSA</MenuItem>
+            <MenuItem value="dma">DMA</MenuItem>
+            <MenuItem value="agent">Agent</MenuItem>      
+
             </TextField>
             <TextField
               fullWidth
@@ -226,7 +232,7 @@ function SignupPage() {
           width: '100%',
           textAlign: 'center',
           backgroundColor: '#0A1929',
-          padding: 2,
+          padding: 1,
           color: '#FFFFFF',
           fontSize: '0.875rem'
         }}

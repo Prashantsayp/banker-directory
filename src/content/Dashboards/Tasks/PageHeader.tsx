@@ -1,4 +1,3 @@
-
 import {
   Typography,
   Button,
@@ -40,13 +39,18 @@ const AvatarPageTitle = styled(Avatar)(
   `
 );
 
-function PageHeader({ onCreated }: { onCreated: () => void }) {
+function PageHeader({
+  onCreated,
+  showAddButton = true
+}: {
+  onCreated: () => void;
+  showAddButton?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   const pathname = router.pathname;
 
-  // ✅ Updated logic for better live route detection
   const isLenderRoute = pathname.includes('lender');
   const isBankerRoute = pathname.includes('banker') || pathname.includes('directory');
 
@@ -81,18 +85,20 @@ function PageHeader({ onCreated }: { onCreated: () => void }) {
             <Typography variant="subtitle2">"Manage your Directory"</Typography>
           </Box>
         </Box>
-        <Box mt={{ xs: 3, md: 0 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddTwoToneIcon fontSize="small" />}
-            onClick={() => setOpen(true)}
-          >
-            {buttonLabel}
-          </Button>
-        </Box>
+
+        {showAddButton && (
+          <Box mt={{ xs: 3, md: 0 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddTwoToneIcon fontSize="small" />}
+              onClick={() => setOpen(true)}
+            >
+              {buttonLabel}
+            </Button>
+          </Box>
+        )}
       </Box>
 
-      {/* Modal for Adding Entry */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>
           {dialogTitle}
