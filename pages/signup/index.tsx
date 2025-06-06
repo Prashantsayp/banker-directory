@@ -164,7 +164,7 @@ function SignupPage() {
             {/* add here all users according to requiremnt like channel partnet etc */}
 
             <MenuItem value="user">User</MenuItem>
-            <MenuItem value="admin">Admin</MenuItem>
+           
             <MenuItem value="lender">Lender</MenuItem>
             <MenuItem value="banker">Banker</MenuItem>
             <MenuItem value="channe partner">Channel Partner</MenuItem>
