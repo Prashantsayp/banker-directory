@@ -1,39 +1,30 @@
 import {
-  Typography,
   Box,
   Card,
   Container,
-  Button,
   styled
 } from '@mui/material';
 import type { ReactElement } from 'react';
 import BaseLayout from 'src/layouts/BaseLayout';
-
-import Link from 'src/components/Link';
 import Head from 'next/head';
-
-
-// import Logo from 'src/components/LogoSign';
 import Hero from 'src/content/Overview/Hero';
 
-const HeaderWrapper = styled(Card)(
-  ({ theme }) => `
-  width: 100%;
-  display: flex;
-  align-items: center;
-  height: ${theme.spacing(10)};
-  margin-bottom: ${theme.spacing(10)};
-`
-);
+const HeaderWrapper = styled(Card)(({ theme }) => ({
+  width: '100%',
+  height: theme.spacing(8),
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 2),
+  backgroundColor: theme.palette.primary.light,
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+}));
 
-const OverviewWrapper = styled(Box)(
-  ({ theme }) => `
-    overflow: auto;
-    background: ${theme.palette.common.white};
-    flex: 1;
-    overflow-x: hidden;
-`
-);
+const OverviewWrapper = styled(Box)(({ theme }) => ({
+  flex: 1,
+  backgroundColor: theme.palette.background.default,
+  minHeight: '100vh'
+}));
 
 function Overview() {
   return (
@@ -41,67 +32,32 @@ function Overview() {
       <Head>
         <title>Bankers Directory</title>
       </Head>
-      <HeaderWrapper>
-        <Container maxWidth="lg">
-          <Box display="flex" alignItems="center">
-            {/* <Logo /> */}
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              flex={1}
-            >
-              <Box />
-              <Box>
-                <Button
-                  component={Link}
-                  href="#"
-                  variant="contained"
-                  sx={{ ml: 2 }}
-                >
-              
-                </Button>
-              </Box>
-            </Box>
-          </Box>
 
-        <Box
-            sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center", 
-            justifyContent: "flex-start", 
-            maxWidth: "130px", 
-            height: "auto",
-            overflow: "hidden",
-          }}
+      {/* Header */}
+      <HeaderWrapper>
+        <Container
+          maxWidth="lg"
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <img
-            src="/static/images/logo/f2fin.png"
-            alt="Logo"
-            style={{
-              maxWidth: "100%", 
-              height: "auto", 
-              objectFit: "contain", 
-              borderRadius: "8px", 
-            }}
-          />
-        </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 100 }}>
+              <img
+                src="/static/images/logo/f2fin.png"
+                alt="F2 Fintech"
+                style={{
+                  width: '100%',
+                  objectFit: 'contain',
+                  borderRadius: 6
+                }}
+              />
+            </Box>
+      
+          </Box>
         </Container>
       </HeaderWrapper>
+
+      {/* Hero Section */}
       <Hero />
-      <Container maxWidth="lg" sx={{ mt: 8 }}>
-        <Typography textAlign="center" variant="subtitle1">
-          {/* Developed by{' '} */}
-          <Link
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {/* Prashant */}
-          </Link>
-        </Typography>
-      </Container>
     </OverviewWrapper>
   );
 }
