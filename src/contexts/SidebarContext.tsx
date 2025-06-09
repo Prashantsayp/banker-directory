@@ -1,21 +1,26 @@
 import { useState, ReactNode, createContext } from 'react';
-type SidebarContext = {
-  sidebarToggle: any;
+
+// ✅ Use a different name for the type to avoid naming conflict
+type SidebarContextType = {
+  sidebarToggle: boolean;
   toggleSidebar: () => void;
   closeSidebar: () => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SidebarContext = createContext<SidebarContext>(
-  {} as SidebarContext
+// ✅ Create the context using the renamed type
+export const SidebarContext = createContext<SidebarContextType>(
+  {} as SidebarContextType
 );
 
+// ✅ Props type for the provider
 type Props = {
   children: ReactNode;
 };
 
+// ✅ SidebarProvider component
 export function SidebarProvider({ children }: Props) {
   const [sidebarToggle, setSidebarToggle] = useState(false);
+
   const toggleSidebar = () => {
     setSidebarToggle(!sidebarToggle);
   };
