@@ -14,29 +14,21 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
 
-
-
-const StyledButton = styled(Button)(
-  ({ theme }) => `
-    background-color: #1a73e8;
-    color: #fff;
-    padding: ${theme.spacing(1)} ${theme.spacing(3)};
-    border-radius: 8px;
-    font-size: ${theme.typography.pxToRem(16)};
-    font-weight: bold;
-    text-transform: none;
-    margin-top: ${theme.spacing(2)};
-    box-shadow: 0 4px ${theme.palette.grey[700]};
-    transition: all 0.2s ease-in-out;
-    &:hover {
-      background-color: #155db2;
-    }
-    &:active {
-      box-shadow: none;
-      transform: translateY(4px);
-    }
-`
-);
+const StyledButton = styled(Button)(({ theme }) => ({
+  padding: `${theme.spacing(1.5)} ${theme.spacing(4)}`,
+  borderRadius: 50,
+  fontWeight: 600,
+  fontSize: '1rem',
+  textTransform: 'none',
+  backgroundColor: '#4f46e5',
+  color: '#fff',
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: '#4338ca',
+    boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.15)'
+  }
+}));
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -45,23 +37,18 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
 
-  const handleTogglePassword = () => {
-    setShowPassword(!showPassword);
-  };
+  const handleTogglePassword = () => setShowPassword(!showPassword);
 
   const handleLogin = async () => {
     try {
-      console.log('Login Payload:', { email: username, password });
       const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-      { email: username, password }
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+        { email: username, password }
       );
       const { access_token } = response.data;
-      console.log('Access Token:', access_token);
       localStorage.setItem('token', access_token);
       router.push('/directory/tasks');
     } catch (error) {
-      console.error('Login Error:', error.response || error.message);
       setErrorMessage(
         error.response?.data?.message || 'Login failed. Please try again.'
       );
@@ -72,12 +59,11 @@ function LoginPage() {
     <>
       <Box
         sx={{
-          backgroundColor: '#0A1929',
+          background: 'linear-gradient(to right, #a8cff8 0%, #cde7f9 30%, #f9fcff 100%)',
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#FFFFFF',
           padding: 2
         }}
       >
@@ -85,47 +71,38 @@ function LoginPage() {
           <Box
             sx={{
               textAlign: 'center',
-              backgroundColor: '#132F4C',
+              backgroundColor: '#ffffff',
               borderRadius: 4,
               padding: 4,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1)',
+              color: '#0f172a'
             }}
           >
             {/* Logo */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
               <img
-                src="/static/images/logo/f2fin.png"
+                src="/static/images/logo/f2.png"
                 alt="F2 Fintech Logo"
-                style={{
-                  height: '100px',
-                  width: 'auto',
-                  objectFit: 'contain'
-                }}
+                style={{ height: '90px', width: 'auto' }}
               />
             </Box>
-            <Typography
-              variant="h5"
-              component="h1"
-              sx={{ color: '#FFFFFF', fontWeight: 'bold', mb: 2 }}
-            >
+
+            {/* Heading */}
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
               Welcome Back!
             </Typography>
-            <Typography
-              sx={{
-                color: '#B0BEC5',
-                fontSize: '1rem',
-                marginBottom: '2rem'
-              }}
-            >
+            <Typography sx={{ color: '#475569', fontSize: '1rem', mb: 3 }}>
               Please login to your account.
             </Typography>
+
+            {/* Error Message */}
             {errorMessage && (
-              <Typography
-                sx={{ color: 'red', mb: 2, fontSize: '0.875rem' }}
-              >
+              <Typography sx={{ color: 'red', mb: 2, fontSize: '0.875rem' }}>
                 {errorMessage}
               </Typography>
             )}
+
+            {/* Form */}
             <Box component="form" noValidate>
               <TextField
                 fullWidth
@@ -134,15 +111,15 @@ function LoginPage() {
                 margin="normal"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                InputProps={{
-                  style: {
-                    backgroundColor: '#1E293B',
-                    color: '#FFFFFF',
-                    borderRadius: '8px'
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: '#f1f5f9',
+                    color: '#0f172a',
+                    borderRadius: '12px'
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#475569'
                   }
-                }}
-                InputLabelProps={{
-                  style: { color: '#FFFFFF' }
                 }}
                 required
               />
@@ -154,43 +131,50 @@ function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  style: {
-                    backgroundColor: '#1E293B',
-                    color: '#FFFFFF',
-                    borderRadius: '8px'
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: '#f1f5f9',
+                    color: '#0f172a',
+                    borderRadius: '12px'
                   },
+                  '& .MuiInputLabel-root': {
+                    color: '#475569'
+                  }
+                }}
+                InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleTogglePassword}
-                        edge="end"
-                        style={{ color: '#FFFFFF' }}
-                      >
+                      <IconButton onClick={handleTogglePassword} edge="end">
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   )
                 }}
-                InputLabelProps={{
-                  style: { color: '#FFFFFF' }
-                }}
                 required
               />
+
               <StyledButton fullWidth onClick={handleLogin}>
                 Login
               </StyledButton>
             </Box>
-<Typography sx={{ color: '#B0BEC5', mt: 2 }}>
-  Don’t have an account?{' '}
-  <Link href="/signup" passHref>
-    <Typography component="a" sx={{ color: '#1a73e8', textDecoration: 'none', cursor: 'pointer' }}>
-      Sign up
-    </Typography>
-  </Link>
-</Typography>
 
-
+            {/* Sign up link */}
+            <Typography sx={{ color: '#475569', mt: 2 }}>
+              Don’t have an account?{' '}
+              <Link href="/signup" passHref>
+                <Typography
+                  component="a"
+                  sx={{
+                    color: '#1a73e8',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Sign up
+                </Typography>
+              </Link>
+            </Typography>
           </Box>
         </Container>
       </Box>
@@ -202,9 +186,9 @@ function LoginPage() {
           bottom: 0,
           width: '100%',
           textAlign: 'center',
-          backgroundColor: '#0A1929',
+          backgroundColor: '#f1f5f9',
           padding: 2,
-          color: '#FFFFFF',
+          color: '#475569',
           fontSize: '0.875rem'
         }}
       >

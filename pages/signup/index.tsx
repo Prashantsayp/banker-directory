@@ -15,26 +15,22 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
 
-// Styled Button
-const StyledButton = styled(Button)(({ theme }) => `
-  background-color: #1a73e8;
-  color: #fff;
-  padding: ${theme.spacing(1)} ${theme.spacing(3)};
-  border-radius: 8px;
-  font-size: ${theme.typography.pxToRem(16)};
-  font-weight: bold;
-  text-transform: none;
-  margin-top: ${theme.spacing(2)};
-  box-shadow: 0 4px ${theme.palette.grey[700]};
-  transition: all 0.2s ease-in-out;
-  &:hover {
-    background-color: #155db2;
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  padding: `${theme.spacing(1.5)} ${theme.spacing(4)}`,
+  borderRadius: 50,
+  fontWeight: 600,
+  fontSize: '1rem',
+  textTransform: 'none',
+  backgroundColor: '#4f46e5',
+  color: '#fff',
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: '#4338ca',
+    boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.15)'
   }
-  &:active {
-    box-shadow: none;
-    transform: translateY(4px);
-  }
-`);
+}));
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -42,7 +38,7 @@ function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'USER' // default role
+    role: 'user'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -61,7 +57,7 @@ function SignupPage() {
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
         {
           fullName: formData.fullName,
@@ -70,10 +66,8 @@ function SignupPage() {
           role: formData.role
         }
       );
-      console.log('Signup success:', response.data);
-      router.push('/login'); 
+      router.push('/login');
     } catch (error) {
-      console.error('Signup error:', error.response || error.message);
       setErrorMessage(
         error.response?.data?.message || 'Signup failed. Try again.'
       );
@@ -84,12 +78,11 @@ function SignupPage() {
     <>
       <Box
         sx={{
-          backgroundColor: '#0A1929',
+          background: 'linear-gradient(to right, #a8cff8 0%, #cde7f9 30%, #f9fcff 100%)',
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#FFFFFF',
           padding: 2
         }}
       >
@@ -97,27 +90,31 @@ function SignupPage() {
           <Box
             sx={{
               textAlign: 'center',
-              backgroundColor: '#132F4C',
+              backgroundColor: '#ffffff',
               borderRadius: 4,
-              padding: 3,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+              padding: 4,
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1)',
+              color: '#0f172a'
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <img
-                src="/static/images/logo/f2fin.png"
+                src="/static/images/logo/f2.png"
                 alt="F2 Fintech Logo"
-                style={{ height: '100px', width: 'auto', objectFit: 'contain' }}
+                style={{ height: '90px', width: 'auto' }}
               />
             </Box>
-            <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 'bold', mb: 2 }}>
+
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
               Create an Account
             </Typography>
+
             {errorMessage && (
               <Typography sx={{ color: 'red', mb: 2, fontSize: '0.875rem' }}>
                 {errorMessage}
               </Typography>
             )}
+
             <TextField
               fullWidth
               label="Full Name"
@@ -126,12 +123,19 @@ function SignupPage() {
               margin="normal"
               value={formData.fullName}
               onChange={handleChange}
-              InputProps={{
-                style: { backgroundColor: '#1E293B', color: '#FFFFFF', borderRadius: '8px' }
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  borderRadius: '12px'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#475569'
+                }
               }}
-              InputLabelProps={{ style: { color: '#FFFFFF' } }}
               required
             />
+
             <TextField
               fullWidth
               label="Email"
@@ -140,12 +144,19 @@ function SignupPage() {
               margin="normal"
               value={formData.email}
               onChange={handleChange}
-              InputProps={{
-                style: { backgroundColor: '#1E293B', color: '#FFFFFF', borderRadius: '8px' }
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  borderRadius: '12px'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#475569'
+                }
               }}
-              InputLabelProps={{ style: { color: '#FFFFFF' } }}
               required
             />
+
             <TextField
               fullWidth
               label="Role"
@@ -155,69 +166,96 @@ function SignupPage() {
               margin="normal"
               value={formData.role}
               onChange={handleChange}
-              InputProps={{
-                style: { backgroundColor: '#1E293B', color: '#FFFFFF', borderRadius: '8px' }
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  borderRadius: '12px'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#475569'
+                }
               }}
-              InputLabelProps={{ style: { color: '#FFFFFF' } }}
               required
             >
-            {/* add here all users according to requiremnt like channel partnet etc */}
-
-            <MenuItem value="user">User</MenuItem>
-           
-            <MenuItem value="lender">Lender</MenuItem>
-            <MenuItem value="banker">Banker</MenuItem>
-            <MenuItem value="channe partner">Channel Partner</MenuItem>
-            <MenuItem value="dsa">DSA</MenuItem>
-            <MenuItem value="dma">DMA</MenuItem>
-            <MenuItem value="agent">Agent</MenuItem>      
-
+              <MenuItem value="user">User</MenuItem>
+              <MenuItem value="lender">Lender</MenuItem>
+              <MenuItem value="banker">Banker</MenuItem>
+              <MenuItem value="channel partner">Channel Partner</MenuItem>
+              <MenuItem value="dsa">DSA</MenuItem>
+              <MenuItem value="dma">DMA</MenuItem>
+              <MenuItem value="agent">Agent</MenuItem>
             </TextField>
+
             <TextField
               fullWidth
               label="Password"
               name="password"
+              type={showPassword ? 'text' : 'password'}
               variant="outlined"
               margin="normal"
-              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  borderRadius: '12px'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#475569'
+                }
+              }}
               InputProps={{
-                style: { backgroundColor: '#1E293B', color: '#FFFFFF', borderRadius: '8px' },
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={handleTogglePassword} edge="end" style={{ color: '#FFFFFF' }}>
+                    <IconButton onClick={handleTogglePassword} edge="end">
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 )
               }}
-              InputLabelProps={{ style: { color: '#FFFFFF' } }}
               required
             />
+
             <TextField
               fullWidth
               label="Confirm Password"
               name="confirmPassword"
+              type={showPassword ? 'text' : 'password'}
               variant="outlined"
               margin="normal"
-              type={showPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
-              InputProps={{
-                style: { backgroundColor: '#1E293B', color: '#FFFFFF', borderRadius: '8px' }
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  borderRadius: '12px'
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#475569'
+                }
               }}
-              InputLabelProps={{ style: { color: '#FFFFFF' } }}
               required
             />
+
             <StyledButton fullWidth onClick={handleSignup}>
               Sign Up
             </StyledButton>
 
-            <Typography sx={{ color: '#B0BEC5', mt: 2 }}>
+            <Typography sx={{ color: '#475569', mt: 2 }}>
               Already have an account?{' '}
               <Link href="/login" passHref>
-                <Typography component="a" sx={{ color: '#1a73e8', textDecoration: 'none', cursor: 'pointer' }}>
+                <Typography
+                  component="a"
+                  sx={{
+                    color: '#1a73e8',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
                   Login
                 </Typography>
               </Link>
@@ -225,15 +263,17 @@ function SignupPage() {
           </Box>
         </Container>
       </Box>
+
+      {/* Footer */}
       <Box
         sx={{
           position: 'fixed',
           bottom: 0,
           width: '100%',
           textAlign: 'center',
-          backgroundColor: '#0A1929',
+          backgroundColor: '#f1f5f9',
           padding: 1,
-          color: '#FFFFFF',
+          color: '#475569',
           fontSize: '0.875rem'
         }}
       >

@@ -16,7 +16,7 @@ import { SidebarContext } from 'src/contexts/SidebarContext';
 import DesignServicesTwoToneIcon from '@mui/icons-material/DesignServicesTwoTone';
 import BrightnessLowTwoToneIcon from '@mui/icons-material/BrightnessLowTwoTone';
 import MmsTwoToneIcon from '@mui/icons-material/MmsTwoTone';
-import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
+// import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
 import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
 
 
@@ -240,7 +240,7 @@ function SidebarMenu() {
                     onClick={closeSidebar}
                     startIcon={<MmsTwoToneIcon />}
                   >
-                  Add Lenders
+                  Lenders
                   </Button>
                 </NextLink>
               </ListItem>
@@ -255,7 +255,7 @@ function SidebarMenu() {
             </ListSubheader>
           }
         >
-          <SubMenuWrapper>
+          {/* <SubMenuWrapper>
             <List component="div">
               <ListItem component="div">
                 <NextLink href="/management/lenders" passHref>
@@ -275,7 +275,7 @@ function SidebarMenu() {
                 </NextLink>
               </ListItem>
             </List>
-          </SubMenuWrapper>
+          </SubMenuWrapper> */}
         </List>
         <List
           component="div"
