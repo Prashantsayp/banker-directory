@@ -118,7 +118,7 @@ function LoginPage() {
                     borderRadius: '12px'
                   },
                   '& .MuiInputLabel-root': {
-                    color: '#fff'
+                    color: '#475569'
                   }
                 }}
                 required
@@ -138,7 +138,7 @@ function LoginPage() {
                     borderRadius: '12px'
                   },
                   '& .MuiInputLabel-root': {
-                    color: '#ffffff'
+                    color: '#475569'
                   }
                 }}
                 InputProps={{
