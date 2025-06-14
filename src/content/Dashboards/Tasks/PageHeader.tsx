@@ -10,13 +10,19 @@ import {
   IconButton
 } from '@mui/material';
 import AddTwoToneIcon from '@mui/icons-material/AddTwoTone';
-import AddAlertTwoToneIcon from '@mui/icons-material/AddAlertTwoTone';
 import CloseIcon from '@mui/icons-material/Close';
-import { useState } from 'react';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import BusinessIcon from '@mui/icons-material/Business';
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import FolderSharedIcon from '@mui/icons-material/FolderShared';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+
 import DirectoryForm from './DirectoryForm';
 import LenderForm from './LenderForm';
 import BankerDirectoryForm from './BankerDirectoryForm';
+import UserForm from './userForm';
 
 const AvatarPageTitle = styled(Avatar)(
   ({ theme }) => `
@@ -47,24 +53,50 @@ function PageHeader({
   showAddButton?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
-
   const pathname = router.pathname;
 
   const isLenderRoute = pathname.includes('lender');
   const isBankerRoute = pathname.includes('banker') || pathname.includes('directory');
+  const isUserRoute = pathname.includes('user');
+
+  useEffect(() => {
+
+ const token = localStorage.getItem('token');
+
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+      } catch (err) {
+        console.error('Failed to decode JWT', err);
+      }
+    }
+  }, []);
 
   const buttonLabel = isLenderRoute
     ? 'Add Lender'
     : isBankerRoute
     ? 'Add Banker Directory'
+    : isUserRoute
+    ? 'Create User'
     : 'Add Directory';
 
-  const dialogTitle = isLenderRoute
-    ? 'Add Lender'
+  const dialogTitle = buttonLabel;
+
+  const IconComponent = isLenderRoute
+    ? AccountBalanceIcon
     : isBankerRoute
-    ? 'Add Banker Directory Entry'
-    : 'Add Directory';
+    ? BusinessIcon
+    : isUserRoute
+    ? PersonAddAltIcon
+    : FolderSharedIcon;
+
+  const shouldShowButton =
+  (isUserRoute && userRole === 'admin') ||
+  (!isUserRoute); 
+
 
   return (
     <>
@@ -76,7 +108,7 @@ function PageHeader({
       >
         <Box display="flex" alignItems="center">
           <AvatarPageTitle variant="rounded">
-            <AddAlertTwoToneIcon fontSize="large" />
+            <IconComponent fontSize="large" />
           </AvatarPageTitle>
           <Box>
             <Typography variant="h3" component="h3" gutterBottom>
@@ -86,7 +118,7 @@ function PageHeader({
           </Box>
         </Box>
 
-        {showAddButton && (
+        {showAddButton && shouldShowButton && (
           <Box mt={{ xs: 3, md: 0 }}>
             <Button
               variant="contained"
@@ -119,6 +151,13 @@ function PageHeader({
             />
           ) : isBankerRoute ? (
             <BankerDirectoryForm
+              onSuccess={() => {
+                setOpen(false);
+                onCreated();
+              }}
+            />
+          ) : isUserRoute ? (
+            <UserForm
               onSuccess={() => {
                 setOpen(false);
                 onCreated();
