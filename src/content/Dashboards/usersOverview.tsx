@@ -91,7 +91,7 @@ function UserOverview() {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/${id}`);
+      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/delete-users/${id}`);
       setUsers(users.filter((user) => user._id !== id));
     } catch (error) {
       console.error('Failed to delete user:', error);
@@ -127,24 +127,44 @@ function UserOverview() {
     });
   };
 
-  const handleUpdate = async () => {
-    if (selectedUser) {
-      try {
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/${selectedUser._id}`,
-          updatedUserData
-        );
-        console.log(response);
-        const updatedUsers = users.map((user) =>
-          user._id === selectedUser._id ? { ...user, ...updatedUserData } : user
-        );
-        setUsers(updatedUsers);
-        setOpen(false);
-      } catch (error) {
-        console.error('Failed to update user:', error);
-      }
+ const handleUpdate = async () => {
+  if (!selectedUser) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    const payload = { ...updatedUserData };
+
+    // Remove password if not entered
+    if (!payload.password?.trim()) {
+      delete payload.password;
     }
-  };
+
+    const response = await axios.put(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/update-users/${selectedUser._id}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    console.log('User updated successfully:', response.data);
+
+    const updatedUsers = users.map((user) =>
+      user._id === selectedUser._id ? { ...user, ...payload } : user
+    );
+    setUsers(updatedUsers);
+    setOpen(false);
+  } catch (error: any) {
+    console.error(
+      'Failed to update user:',
+      error.response?.data || error.message
+    );
+  }
+};
+
 
   if (loading) {
     return (
