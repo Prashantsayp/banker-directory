@@ -14,7 +14,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
-
+import CustomSnackbar from '@/components/CustomSnackbar';
+import { SnackbarCloseReason } from '@mui/material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   padding: `${theme.spacing(1.5)} ${theme.spacing(4)}`,
@@ -40,11 +41,20 @@ function SignupPage() {
     confirmPassword: '',
     role: 'user'
   });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
 
-  const handleChange = (e) => {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  const handleSnackbarClose = (_: unknown, reason?: SnackbarCloseReason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -52,25 +62,31 @@ function SignupPage() {
 
   const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setSnackbarMessage('Passwords do not match.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
       return;
     }
 
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`,
-        {
-          fullName: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role
-        }
-      );
-      router.push('/login');
-    } catch (error) {
-      setErrorMessage(
-        error.response?.data?.message || 'Signup failed. Try again.'
-      );
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup`, {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      });
+
+      setSnackbarMessage('Signup successful! Redirecting...');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
+      setTimeout(() => {
+        router.push('/login');
+      }, 1200);
+    } catch (error: any) {
+      setSnackbarMessage(error.response?.data?.message || 'Signup failed. Try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -108,12 +124,6 @@ function SignupPage() {
             <Typography variant="h5" fontWeight="bold" gutterBottom>
               Create an Account
             </Typography>
-
-            {errorMessage && (
-              <Typography sx={{ color: 'red', mb: 2, fontSize: '0.875rem' }}>
-                {errorMessage}
-              </Typography>
-            )}
 
             <TextField
               fullWidth
@@ -279,6 +289,14 @@ function SignupPage() {
       >
         © 2025 - F2 Fintech Pvt. Ltd.
       </Box>
+
+      {/* Snackbar */}
+      <CustomSnackbar
+        open={snackbarOpen}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+      />
     </>
   );
 }

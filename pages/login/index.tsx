@@ -13,6 +13,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
+import CustomSnackbar from '@/components/CustomSnackbar'; 
+import { SnackbarCloseReason } from '@mui/material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   padding: `${theme.spacing(1.5)} ${theme.spacing(4)}`,
@@ -34,10 +36,19 @@ function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
   const router = useRouter();
 
   const handleTogglePassword = () => setShowPassword(!showPassword);
+
+  const handleSnackbarClose = (_: unknown, reason?: SnackbarCloseReason) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+  };
 
   const handleLogin = async () => {
     try {
@@ -47,11 +58,20 @@ function LoginPage() {
       );
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
-      router.push('/directory/tasks');
-    } catch (error) {
-      setErrorMessage(
+
+      setSnackbarMessage('Login successful!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
+      setTimeout(() => {
+        router.push('/directory/tasks');
+      }, 1200);
+    } catch (error: any) {
+      setSnackbarMessage(
         error.response?.data?.message || 'Login failed. Please try again.'
       );
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -94,13 +114,6 @@ function LoginPage() {
             <Typography sx={{ color: '#475569', fontSize: '1rem', mb: 3 }}>
               Please login to your account.
             </Typography>
-
-            {/* Error Message */}
-            {errorMessage && (
-              <Typography sx={{ color: 'red', mb: 2, fontSize: '0.875rem' }}>
-                {errorMessage}
-              </Typography>
-            )}
 
             {/* Form */}
             <Box component="form" noValidate>
@@ -194,6 +207,14 @@ function LoginPage() {
       >
         © 2025 - F2 Fintech Pvt. Ltd.
       </Box>
+
+      {/* Snackbar */}
+      <CustomSnackbar
+        open={snackbarOpen}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+      />
     </>
   );
 }
