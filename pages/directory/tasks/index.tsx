@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
-import { ChangeEvent, useState, useEffect } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
 import Footer from '@/components/Footer';
 import {
@@ -17,13 +17,17 @@ import {
   TextField,
   Container,
   Card,
-  InputAdornment
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button
 } from '@mui/material';
 import axios from 'axios';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { styled } from '@mui/material/styles';
 import ClearIcon from '@mui/icons-material/Clear';
-
 import { jwtDecode } from 'jwt-decode';
 
 interface Banker {
@@ -37,12 +41,15 @@ interface Banker {
   product: string[];
 }
 
-const BankerOverview = () => {
+const BankerOverview = ({ role }: { role: string | null }) => {
   const [bankers, setBankers] = useState<Banker[]>([]);
   const [filteredBankers, setFilteredBankers] = useState<Banker[]>([]);
   const [searchLocation, setSearchLocation] = useState('');
   const [searchBanker, setSearchBanker] = useState('');
   const [searchAssociatedWith, setSearchAssociatedWith] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editBanker, setEditBanker] = useState<Banker | null>(null);
+ 
 
   useEffect(() => {
     axios
@@ -82,6 +89,53 @@ const BankerOverview = () => {
     if (type === 'associated') setSearchAssociatedWith('');
   };
 
+  const handleEdit = (banker: Banker) => {
+    setEditBanker(banker);
+    setEditModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this banker?')) {
+      try {
+        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
+        setBankers((prev) => prev.filter((banker) => banker._id !== id));
+      } catch (err) {
+        console.error('❌ Failed to delete banker:', err);
+        alert('Something went wrong while deleting!');
+      }
+    }
+  };
+
+const handleSaveChanges = async () => {
+  if (!editBanker) return;
+
+  const updatePayload = {
+    bankerName: editBanker.bankerName,
+    associatedWith: editBanker.associatedWith,
+    emailOfficial: editBanker.emailOfficial,
+    emailPersonal: editBanker.emailPersonal || '',
+    contact: editBanker.contact,
+    locationCategories: editBanker.locationCategories || [],
+    product: editBanker.product || []
+  };
+
+  try {
+    await axios.put(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${editBanker._id}`,
+      updatePayload
+    );
+    setBankers((prev) =>
+      prev.map((b) => (b._id === editBanker._id ? { ...editBanker } : b))
+    );
+    setEditModalOpen(false);
+  } catch (err: any) {
+    console.error('❌ Update Failed:', err.response?.data || err.message);
+    alert(`Update failed: ${err.response?.data?.message || err.message}`);
+  }
+};
+
+
+
   return (
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
@@ -95,7 +149,10 @@ const BankerOverview = () => {
             InputProps={{
               startAdornment: <InputAdornment position="start">📍</InputAdornment>,
               endAdornment: searchLocation && (
-                <ClearIcon onClick={() => handleClearSearch('location')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+                <ClearIcon
+                  onClick={() => handleClearSearch('location')}
+                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
+                />
               )
             }}
             fullWidth
@@ -110,7 +167,10 @@ const BankerOverview = () => {
             InputProps={{
               startAdornment: <InputAdornment position="start">🏦</InputAdornment>,
               endAdornment: searchAssociatedWith && (
-                <ClearIcon onClick={() => handleClearSearch('associated')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+                <ClearIcon
+                  onClick={() => handleClearSearch('associated')}
+                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
+                />
               )
             }}
             fullWidth
@@ -125,7 +185,10 @@ const BankerOverview = () => {
             InputProps={{
               startAdornment: <InputAdornment position="start">👤</InputAdornment>,
               endAdornment: searchBanker && (
-                <ClearIcon onClick={() => handleClearSearch('banker')} sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+                <ClearIcon
+                  onClick={() => handleClearSearch('banker')}
+                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
+                />
               )
             }}
             fullWidth
@@ -179,9 +242,60 @@ const BankerOverview = () => {
                 <strong>Contact:</strong> {banker.contact}
               </Typography>
             </Box>
+
+            {role === 'admin' && (
+              <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                <Chip label="Edit" onClick={() => handleEdit(banker)} color="primary" clickable />
+                <Chip label="Delete" onClick={() => handleDelete(banker._id)} color="error" clickable />
+              </Box>
+            )}
           </Paper>
         </Grid>
       ))}
+
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Banker</DialogTitle>
+        <DialogContent sx={{ mt: 1 }}>
+          {editBanker && (
+            <Stack spacing={2} sx={{mt:2}} >
+              <TextField
+                label="Banker Name"
+                value={editBanker.bankerName}
+                onChange={(e) => setEditBanker({ ...editBanker, bankerName: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Associated With"
+                value={editBanker.associatedWith}
+                onChange={(e) => setEditBanker({ ...editBanker, associatedWith: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Official Email"
+                value={editBanker.emailOfficial}
+                onChange={(e) => setEditBanker({ ...editBanker, emailOfficial: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Personal Email"
+                value={editBanker.emailPersonal || ''}
+                onChange={(e) => setEditBanker({ ...editBanker, emailPersonal: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Contact"
+                value={editBanker.contact}
+                onChange={(e) => setEditBanker({ ...editBanker, contact: e.target.value })}
+                fullWidth
+              />
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveChanges}>Save Changes</Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 };
@@ -195,7 +309,6 @@ const TabsContainerWrapper = styled(Box)(({ theme }) => ({
 const LendersTasks = () => {
   const [currentTab, setCurrentTab] = useState<string>('overview');
   const [role, setRole] = useState<string | null>(null);
- 
 
   const tabs = [{ value: 'overview', label: 'Bankers Directory' }];
 
@@ -204,22 +317,19 @@ const LendersTasks = () => {
   };
 
   useEffect(() => {
-   const getUserRole = (): string | null => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-
-    const decoded: any = jwtDecode(token); 
-    console.log("✅ Decoded Role:", decoded.role);
-    return decoded.role ?? null;
-  } catch (err) {
-    console.error("❌ JWT Decode Failed:", err);
-    return null;
-  }
-};
+    const getUserRole = (): string | null => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
+        const decoded: any = jwtDecode(token);
+        return decoded.role ?? null;
+      } catch (err) {
+        console.error('❌ JWT Decode Failed:', err);
+        return null;
+      }
+    };
 
     const userRole = getUserRole();
-    console.log("✅ Decoded Role:", userRole);
     setRole(userRole);
   }, []);
 
@@ -257,7 +367,7 @@ const LendersTasks = () => {
             {currentTab === 'overview' && (
               <Grid item xs={12}>
                 <Box p={4}>
-                  <BankerOverview />
+                  <BankerOverview role={role} />
                 </Box>
               </Grid>
             )}

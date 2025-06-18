@@ -22,18 +22,19 @@ import {
   FormControl,
   SelectChangeEvent
 } from '@mui/material';
+
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import CustomSnackbar from '@/components/CustomSnackbar';
 
 interface User {
   _id: string;
@@ -45,32 +46,45 @@ interface User {
 
 function UserOverview() {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [open, setOpen] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  const [updatedUserData, setUpdatedUserData] = useState<{
-    fullName: string;
-    email: string;
-    role: 'admin' | 'user';
-    password: string;
-  }>({
+  const [updatedUserData, setUpdatedUserData] = useState({
+    fullName: '',
+    email: '',
+    role: 'user' as 'admin' | 'user',
+    password: ''
+  });
+
+  const [newUserData, setNewUserData] = useState({
     fullName: '',
     email: '',
     role: 'user',
+    gender: 'male',
     password: ''
   });
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  const handleSnackbarClose = (_: unknown, reason?: any) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/get-users`
-        );
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/get-users`);
         setUsers(response.data);
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
+      } catch {
+        setSnackbarMessage('Error fetching users.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       } finally {
         setLoading(false);
       }
@@ -93,8 +107,13 @@ function UserOverview() {
     try {
       await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/delete-users/${id}`);
       setUsers(users.filter((user) => user._id !== id));
-    } catch (error) {
-      console.error('Failed to delete user:', error);
+      setSnackbarMessage('User deleted successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch {
+      setSnackbarMessage('Failed to delete user.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -127,44 +146,65 @@ function UserOverview() {
     });
   };
 
- const handleUpdate = async () => {
-  if (!selectedUser) return;
+  const handleUpdate = async () => {
+    if (!selectedUser) return;
 
-  try {
-    const token = localStorage.getItem('token');
+    try {
+      const token = localStorage.getItem('token');
+      const payload = { ...updatedUserData };
+      if (!payload.password?.trim()) delete payload.password;
 
-    const payload = { ...updatedUserData };
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/update-users/${selectedUser._id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Remove password if not entered
-    if (!payload.password?.trim()) {
-      delete payload.password;
+      const updatedUsers = users.map((user) =>
+        user._id === selectedUser._id ? { ...user, ...payload } : user
+      );
+      setUsers(updatedUsers);
+      setOpen(false);
+
+      setSnackbarMessage('User updated successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch {
+      setSnackbarMessage('Failed to update user.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
+  };
 
-    const response = await axios.put(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/update-users/${selectedUser._id}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
+  const handleCreateUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
 
-    console.log('User updated successfully:', response.data);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/create-users`,
+        newUserData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    const updatedUsers = users.map((user) =>
-      user._id === selectedUser._id ? { ...user, ...payload } : user
-    );
-    setUsers(updatedUsers);
-    setOpen(false);
-  } catch (error: any) {
-    console.error(
-      'Failed to update user:',
-      error.response?.data || error.message
-    );
-  }
-};
+      setUsers([...users, response.data]);
+      setCreateOpen(false);
+      setNewUserData({
+        fullName: '',
+        email: '',
+        role: 'user',
+        gender: 'male',
+        password: ''
+      });
 
+      setSnackbarMessage('User created successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch {
+      setSnackbarMessage('Failed to create user.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -175,156 +215,173 @@ function UserOverview() {
   }
 
   return (
-    <Grid container spacing={4}>
-      {users.map((user) => (
-        <Grid item xs={12} sm={6} md={4} key={user._id}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 2,
-              boxShadow: 4,
-              transition: '0.3s',
-              '&:hover': { boxShadow: 8 },
-              backgroundColor: '#1D2C3D',
-              padding: '16px',
-              position: 'relative'
-            }}
-          >
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Avatar
-                  sx={{
-                    bgcolor:
-                      user.role === 'admin' ? 'secondary.main' : 'primary.main',
-                    width: 56,
-                    height: 56,
-                    fontSize: '2rem',
-                    mr: 2
-                  }}
-                >
-                  <PersonIcon sx={{ fontSize: '1.5rem' }} />
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" fontWeight={600} color="#fff">
-                    {user.fullName}
-                  </Typography>
-                  <Typography variant="body2" color="#fff">
-                    {user.email}
-                  </Typography>
+    <>
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Button variant="contained" color="primary" onClick={() => setCreateOpen(true)}>
+          + Create User
+        </Button>
+      </Box>
+
+      <Grid container spacing={4}>
+        {users.map((user) => (
+          <Grid item xs={12} sm={6} md={4} key={user._id}>
+            <Card
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                boxShadow: 4,
+                transition: '0.3s',
+                '&:hover': { boxShadow: 8 },
+                backgroundColor: '#1D2C3D',
+                padding: '16px',
+                position: 'relative'
+              }}
+            >
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Avatar
+                    sx={{
+                      bgcolor: user.role === 'admin' ? 'secondary.main' : 'primary.main',
+                      width: 56,
+                      height: 56,
+                      fontSize: '2rem',
+                      mr: 2
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: '1.5rem' }} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} color="#fff">
+                      {user.fullName}
+                    </Typography>
+                    <Typography variant="body2" color="#fff">
+                      {user.email}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
 
-              <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 2 }} />
 
-              <Box display="flex" flexWrap="wrap" gap={1}>
-                <Chip
-                  label={user.gender}
-                  icon={
-                    user.gender === 'male' ? (
-                      <MaleIcon fontSize="small" />
-                    ) : user.gender === 'female' ? (
-                      <FemaleIcon fontSize="small" />
-                    ) : (
-                      <TransgenderIcon fontSize="small" />
-                    )
-                  }
-                  variant="outlined"
-                  color="primary"
-                  size="small"
-                  sx={{ fontWeight: 500, color: '#fff' }}
-                />
-                <Chip
-                  label={user.role === 'admin' ? 'Admin' : 'User'}
-                  icon={
-                    user.role === 'admin' ? (
-                      <AdminPanelSettingsIcon fontSize="small" />
-                    ) : (
-                      <PersonOutlineIcon fontSize="small" />
-                    )
-                  }
-                  variant="outlined"
-                  color={user.role === 'admin' ? 'secondary' : 'default'}
-                  size="small"
-                  sx={{ fontWeight: 500, color: '#fff' }}
-                />
-              </Box>
+                <Box display="flex" flexWrap="wrap" gap={1}>
+                  <Chip
+                    label={user.gender}
+                    icon={
+                      user.gender === 'male' ? (
+                        <MaleIcon fontSize="small" />
+                      ) : user.gender === 'female' ? (
+                        <FemaleIcon fontSize="small" />
+                      ) : (
+                        <TransgenderIcon fontSize="small" />
+                      )
+                    }
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    sx={{ fontWeight: 500, color: '#fff' }}
+                  />
+                  <Chip
+                    label={user.role === 'admin' ? 'Admin' : 'User'}
+                    icon={
+                      user.role === 'admin' ? (
+                        <AdminPanelSettingsIcon fontSize="small" />
+                      ) : (
+                        <PersonOutlineIcon fontSize="small" />
+                      )
+                    }
+                    variant="outlined"
+                    color={user.role === 'admin' ? 'secondary' : 'default'}
+                    size="small"
+                    sx={{ fontWeight: 500, color: '#fff' }}
+                  />
+                </Box>
 
-              <Box
-                display="flex"
-                justifyContent="flex-end"
-                mt={2}
-                position="absolute"
-                bottom={16}
-                right={16}
-              >
-                <Tooltip title="Edit" placement="top">
-                  <IconButton onClick={() => handleEdit(user)}>
-                    <EditIcon sx={{ color: '#fff' }} />
-                  </IconButton>
-                </Tooltip>
-
-                {userRole === 'admin' && (
-                  <Tooltip title="Delete" placement="top">
-                    <IconButton onClick={() => handleDelete(user._id)}>
-                      <DeleteIcon sx={{ color: 'error.main' }} />
+                <Box
+                  display="flex"
+                  justifyContent="flex-end"
+                  mt={2}
+                  position="absolute"
+                  bottom={16}
+                  right={16}
+                >
+                  <Tooltip title="Edit" placement="top">
+                    <IconButton onClick={() => handleEdit(user)}>
+                      <EditIcon sx={{ color: '#fff' }} />
                     </IconButton>
                   </Tooltip>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
 
-      {/* Edit User Modal */}
+                  {userRole === 'admin' && (
+                    <Tooltip title="Delete" placement="top">
+                      <IconButton onClick={() => handleDelete(user._id)}>
+                        <DeleteIcon sx={{ color: 'error.main' }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Edit Dialog */}
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
-          <TextField
-            label="Full Name"
-            name="fullName"
-            value={updatedUserData.fullName}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-          />
-          <TextField
-            label="Email"
-            name="email"
-            value={updatedUserData.email}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-          />
-          <FormControl fullWidth sx={{ marginBottom: 2 }}>
+          <TextField label="Full Name" name="fullName" value={updatedUserData.fullName} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
+          <TextField label="Email" name="email" value={updatedUserData.email} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
+          <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Role</InputLabel>
-            <Select
-              label="Role"
-              value={updatedUserData.role}
-              onChange={handleRoleChange}
-            >
+            <Select label="Role" value={updatedUserData.role} onChange={handleRoleChange}>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="user">User</MenuItem>
             </Select>
           </FormControl>
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            value={updatedUserData.password}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-          />
+          <TextField label="Password" name="password" type="password" value={updatedUserData.password} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleUpdate} color="primary">
-            Update
-          </Button>
+          <Button onClick={handleUpdate} color="primary">Update</Button>
         </DialogActions>
       </Dialog>
-    </Grid>
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
+        <DialogTitle>Create New User</DialogTitle>
+        <DialogContent>
+          <TextField label="Full Name" value={newUserData.fullName} onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })} fullWidth sx={{ mb: 2 }} />
+          <TextField label="Email" value={newUserData.email} onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })} fullWidth sx={{ mb: 2 }} />
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Gender</InputLabel>
+            <Select value={newUserData.gender} onChange={(e) => setNewUserData({ ...newUserData, gender: e.target.value })}>
+              <MenuItem value="male">Male</MenuItem>
+              <MenuItem value="female">Female</MenuItem>
+              <MenuItem value="other">Other</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Role</InputLabel>
+            <Select value={newUserData.role} onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}>
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="user">User</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField label="Password" type="password" value={newUserData.password} onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })} fullWidth sx={{ mb: 2 }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateUser} variant="contained" color="primary">Create</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar */}
+      <CustomSnackbar
+        open={snackbarOpen}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+        onClose={handleSnackbarClose}
+        duration={4000}
+      />
+    </>
   );
 }
 

@@ -4,7 +4,7 @@ import { Snackbar, Alert, AlertColor, SnackbarCloseReason } from '@mui/material'
 interface CustomSnackbarProps {
   open: boolean;
   message: string;
-  severity?: AlertColor; // 'success' | 'error' | 'warning' | 'info'
+  severity?: AlertColor;
   onClose: (
     event?: React.SyntheticEvent | Event,
     reason?: SnackbarCloseReason

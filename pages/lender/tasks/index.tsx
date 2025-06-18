@@ -64,7 +64,7 @@ function LendersTasks() {
             {currentTab === 'overview' && (
               <Grid item xs={12}>
                 <Box p={4}>
-                  <LenderOverview />
+                  <LenderOverview userRole={''} />
                 </Box>
               </Grid>
             )}
