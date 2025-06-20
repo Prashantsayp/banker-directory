@@ -4,15 +4,20 @@ import {
   Typography,
   Avatar,
   Paper,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   TextField,
-  Stack
+  Stack,
+  IconButton,
+  Tooltip
 } from '@mui/material';
+import {
+  EditTwoTone as EditIcon,
+  DeleteTwoTone as DeleteIcon
+} from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -27,14 +32,12 @@ interface Lender {
   rmContact?: string;
 }
 
-interface LenderOverviewProps {
-  userRole: 'admin' | 'user' | string;
-}
-
-const LenderOverview = ({ userRole }: LenderOverviewProps) => {
+const LenderOverview = ({ role }: { role: string | null }) => {
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editLender, setEditLender] = useState<Lender | null>(null);
+
+  const isAdmin = role === 'admin';
 
   useEffect(() => {
     fetchLenders();
@@ -84,7 +87,35 @@ const LenderOverview = ({ userRole }: LenderOverviewProps) => {
       <Grid container spacing={3}>
         {lenders.map((lender) => (
           <Grid item xs={12} sm={6} md={4} key={lender._id}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+            <Paper
+              elevation={3}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                position: 'relative',
+                transition: 'transform 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: 6
+                }
+              }}
+            >
+              {/* ✅ Admin-only action buttons */}
+              {isAdmin && (
+                <Box position="absolute" top={8} right={8}>
+                  <Tooltip title="Edit Lender" arrow>
+                    <IconButton color="primary" onClick={() => handleEdit(lender)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Lender" arrow>
+                    <IconButton color="error" onClick={() => handleDelete(lender._id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+
               <Box display="flex" alignItems="center" mb={2}>
                 <Avatar sx={{ mr: 2 }}>{lender.lenderName.charAt(0)}</Avatar>
                 <Box>
@@ -104,14 +135,6 @@ const LenderOverview = ({ userRole }: LenderOverviewProps) => {
               <Typography variant="body2" gutterBottom>
                 <strong>Contact:</strong> {lender.rmContact || 'N/A'}
               </Typography>
-
-              {/* Only show Edit/Delete if user is admin */}
-              {userRole === 'admin' && (
-                <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
-                  <Chip label="Edit" onClick={() => handleEdit(lender)} color="primary" clickable />
-                  <Chip label="Delete" onClick={() => handleDelete(lender._id)} color="error" clickable />
-                </Box>
-              )}
             </Paper>
           </Grid>
         ))}
@@ -170,7 +193,9 @@ const LenderOverview = ({ userRole }: LenderOverviewProps) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveChanges}>Save Changes</Button>
+          <Button variant="contained" onClick={handleSaveChanges}>
+            Save Changes
+          </Button>
         </DialogActions>
       </Dialog>
     </>

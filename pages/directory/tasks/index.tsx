@@ -47,6 +47,8 @@ const BankerOverview = ({ role }: { role: string | null }) => {
   const [searchLocation, setSearchLocation] = useState('');
   const [searchBanker, setSearchBanker] = useState('');
   const [searchAssociatedWith, setSearchAssociatedWith] = useState('');
+  const [searchEmailOfficial, setSearchEmailOfficial] = useState('');
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editBanker, setEditBanker] = useState<Banker | null>(null);
  
@@ -61,33 +63,48 @@ const BankerOverview = ({ role }: { role: string | null }) => {
       .catch((err) => console.error('❌ Error:', err));
   }, []);
 
-  useEffect(() => {
-    const filtered = bankers.filter((banker) => {
-      const matchesLocation = searchLocation
-        ? banker.locationCategories.some((location) =>
-            location.toLowerCase().includes(searchLocation.toLowerCase())
-          )
-        : true;
+ useEffect(() => {
+  const filtered = bankers.filter((banker) => {
+    const locationQuery = searchLocation.trim().toLowerCase();
+    const bankerQuery = searchBanker.trim().toLowerCase();
+    const associatedQuery = searchAssociatedWith.trim().toLowerCase();
+    const emailQuery = searchEmailOfficial.trim().toLowerCase(); // 👈 Add this line
 
-      const matchesBanker = searchBanker
-        ? banker.bankerName.toLowerCase().includes(searchBanker.toLowerCase())
-        : true;
+    const matchesLocation = locationQuery
+      ? banker.locationCategories.some((location) =>
+          location.toLowerCase().includes(locationQuery)
+        )
+      : true;
 
-      const matchesAssociatedWith = searchAssociatedWith
-        ? banker.associatedWith.toLowerCase().includes(searchAssociatedWith.toLowerCase())
-        : true;
+    const matchesBanker = bankerQuery
+      ? banker.bankerName.toLowerCase().includes(bankerQuery)
+      : true;
 
-      return matchesLocation && matchesBanker && matchesAssociatedWith;
-    });
+    const matchesAssociatedWith = associatedQuery
+      ? banker.associatedWith.toLowerCase().includes(associatedQuery)
+      : true;
 
-    setFilteredBankers(filtered);
-  }, [searchLocation, searchBanker, searchAssociatedWith, bankers]);
+    const matchesEmail = emailQuery
+      ? banker.emailOfficial.toLowerCase().includes(emailQuery)
+      : true;
 
-  const handleClearSearch = (type: 'location' | 'banker' | 'associated') => {
-    if (type === 'location') setSearchLocation('');
-    if (type === 'banker') setSearchBanker('');
-    if (type === 'associated') setSearchAssociatedWith('');
-  };
+    return (
+      matchesLocation &&
+      matchesBanker &&
+      matchesAssociatedWith &&
+      matchesEmail
+    );
+  });
+
+  setFilteredBankers(filtered);
+}, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial, bankers]);
+
+const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
+  if (type === 'location') setSearchLocation('');
+  if (type === 'banker') setSearchBanker('');
+  if (type === 'associated') setSearchAssociatedWith('');
+  if (type === 'emailOfficial') setSearchEmailOfficial('');
+};
 
   const handleEdit = (banker: Banker) => {
     setEditBanker(banker);
@@ -139,13 +156,13 @@ const handleSaveChanges = async () => {
   return (
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
-        <Box display="flex" gap={2} flexWrap="wrap">
+        <Box display="flex" gap={1} flexWrap="wrap">
           <TextField
             label="Search by Location"
             variant="outlined"
             value={searchLocation}
             onChange={(e) => setSearchLocation(e.target.value)}
-            sx={{ mb: 1, maxWidth: 250 }}
+            sx={{ mb: 1, maxWidth: 200 }}
             InputProps={{
               startAdornment: <InputAdornment position="start">📍</InputAdornment>,
               endAdornment: searchLocation && (
@@ -163,7 +180,7 @@ const handleSaveChanges = async () => {
             variant="outlined"
             value={searchAssociatedWith}
             onChange={(e) => setSearchAssociatedWith(e.target.value)}
-            sx={{ mb: 1, maxWidth: 250 }}
+            sx={{ mb: 1, maxWidth: 200 }}
             InputProps={{
               startAdornment: <InputAdornment position="start">🏦</InputAdornment>,
               endAdornment: searchAssociatedWith && (
@@ -175,6 +192,23 @@ const handleSaveChanges = async () => {
             }}
             fullWidth
           />
+<TextField
+  label="Search by Official Email"
+  variant="outlined"
+  value={searchEmailOfficial}
+  onChange={(e) => setSearchEmailOfficial(e.target.value)}
+  sx={{ mb: 1, maxWidth: 200 }}
+  InputProps={{
+    startAdornment: <InputAdornment position="start">📧</InputAdornment>,
+    endAdornment: searchEmailOfficial && (
+      <ClearIcon
+        onClick={() => handleClearSearch('emailOfficial')}
+        sx={{ cursor: 'pointer', color: 'text.secondary' }}
+      />
+    )
+  }}
+  fullWidth
+/>
 
           <TextField
             label="Search by Banker"
@@ -193,6 +227,7 @@ const handleSaveChanges = async () => {
             }}
             fullWidth
           />
+          
         </Box>
       </Grid>
 

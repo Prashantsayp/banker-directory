@@ -42,7 +42,7 @@ interface Member {
   bankName: string;
 }
 
-const TeamOverview = ({ userRole = 'user' }: { userRole?: 'admin' | 'user' }) => {
+const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) => {
   const theme = useTheme();
   const [members, setMembers] = useState<Member[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
