@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Box, TextField, Button, Grid, Typography, Alert, Snackbar, IconButton
+   TextField, Button, Grid, Typography, Alert, Snackbar, IconButton, Paper
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
@@ -19,6 +19,28 @@ const BankerDirectoryForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
   const [error, setError] = useState('');
   const [successOpen, setSuccessOpen] = useState(false);
+
+  const commonTextFieldStyles = {
+    '& .MuiOutlinedInput-root': {
+      '& fieldset': {
+        borderColor: '#ccc',
+        borderRadius: 2
+      },
+      '&:hover fieldset': {
+        borderColor: '#aaa'
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#1976d2',
+        boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.1)'
+      }
+    },
+    '& .MuiInputLabel-root': {
+      color: '#666'
+    },
+    '& .MuiInputLabel-root.Mui-focused': {
+      color: '#1976d2'
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -61,135 +83,215 @@ const BankerDirectoryForm = ({ onSuccess }: { onSuccess: () => void }) => {
     setForm({ ...form, product: updated });
   };
 
-const handleSubmit = async () => {
-  setError('');
-  const payload = {
-    ...form,
-    emailOfficial: form.emailOfficial.trim() === '' ? undefined : form.emailOfficial.trim(),
-    emailPersonal: form.emailPersonal.trim() === '' ? undefined : form.emailPersonal.trim(),
+  const handleSubmit = async () => {
+    setError('');
+    const payload = {
+      ...form,
+      emailOfficial: form.emailOfficial.trim() === '' ? undefined : form.emailOfficial.trim(),
+      emailPersonal: form.emailPersonal.trim() === '' ? undefined : form.emailPersonal.trim(),
+    };
+
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/create-directories`,
+        payload
+      );
+      setSuccessOpen(true);
+      setForm({
+        bankerName: '',
+        associatedWith: '',
+        locationCategories: [''],
+        emailOfficial: '',
+        emailPersonal: '',
+        contact: '',
+        lastCurrentDesignation: '',
+        product: [''],
+      });
+      onSuccess();
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Something went wrong';
+      setError(Array.isArray(message) ? message.join(', ') : message);
+    }
   };
 
-  try {
-    await axios.post(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/create-directories`,
-      payload
-    );
-    setSuccessOpen(true);
-    setForm({
-      bankerName: '',
-      associatedWith: '',
-      locationCategories: [''],
-      emailOfficial: '',
-      emailPersonal: '',
-      contact: '',
-      lastCurrentDesignation: '',
-      product: [''],
-    });
-    onSuccess();
-  } catch (err: any) {
-    const message = err?.response?.data?.message || 'Something went wrong';
-    setError(Array.isArray(message) ? message.join(', ') : message);
-  }
-};
-
-
-
   return (
-    <Box p={3}>
-      <Typography variant="h5" gutterBottom>
-        Create Banker Directory Entry
-      </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Paper elevation={3} sx={{ p: 4, maxWidth: 900, margin: '0 auto', backgroundColor:'#fff', borderRadius: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: '#222' }}>
+          Create Banker Directory Entry
+        </Typography>
 
-      <Grid container spacing={2}>
-        {/* Banker Name */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Banker Name" name="bankerName" value={form.bankerName} onChange={handleChange} />
-        </Grid>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* Associated With */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Associated With" name="associatedWith" value={form.associatedWith} onChange={handleChange} />
-        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Banker Name"
+              name="bankerName"
+              value={form.bankerName}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
 
-        {/* Location Categories */}
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>Location Serve</Typography>
-          {form.locationCategories.map((cat, idx) => (
-            <Grid container spacing={2} key={idx} alignItems="center">
-              <Grid item xs={10}>
-                <TextField fullWidth label={`Category ${idx + 1}`} value={cat} onChange={e => handleLocationChange(idx, e.target.value)} />
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Associated With"
+              name="associatedWith"
+              value={form.associatedWith}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
+
+          {/* Location Categories */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#333' }}>
+              Location Serve
+            </Typography>
+            {form.locationCategories.map((cat, idx) => (
+              <Grid container spacing={2} key={idx} alignItems="center">
+                <Grid item xs={10}>
+                  <TextField
+                    fullWidth
+                    label={`Location ${idx + 1}`}
+                    value={cat}
+                    onChange={e => handleLocationChange(idx, e.target.value)}
+                    variant="outlined"
+                    sx={commonTextFieldStyles}
+                    inputProps={{ style: { color: '#333' } }}
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  {form.locationCategories.length > 1 && (
+                    <IconButton onClick={() => removeLocationCategory(idx)} aria-label="delete">
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  )}
+                </Grid>
               </Grid>
-              <Grid item xs={2}>
-                {form.locationCategories.length > 1 && (
-                  <IconButton onClick={() => removeLocationCategory(idx)}>
-                    <DeleteIcon color="error" />
-                  </IconButton>
-                )}
+            ))}
+            <Button variant="outlined" onClick={addLocationCategory} sx={{ mt: 1 }}>
+              + Add Location
+            </Button>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Official Email"
+              name="emailOfficial"
+              value={form.emailOfficial}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Personal Email"
+              name="emailPersonal"
+              value={form.emailPersonal}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Contact"
+              name="contact"
+              value={form.contact}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Last/Current Designation"
+              name="lastCurrentDesignation"
+              value={form.lastCurrentDesignation}
+              onChange={handleChange}
+              variant="outlined"
+              sx={commonTextFieldStyles}
+              inputProps={{ style: { color: '#333' } }}
+            />
+          </Grid>
+
+          {/* Product Categories */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#333' }}>
+              Product Categories
+            </Typography>
+            {form.product.map((item, idx) => (
+              <Grid container spacing={2} key={idx} alignItems="center">
+                <Grid item xs={10}>
+                  <TextField
+                    fullWidth
+                    label={`Product ${idx + 1}`}
+                    value={item}
+                    onChange={e => handleProductChange(idx, e.target.value)}
+                    variant="outlined"
+                    sx={commonTextFieldStyles}
+                    inputProps={{ style: { color: '#333' } }}
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  {form.product.length > 1 && (
+                    <IconButton onClick={() => removeProduct(idx)} aria-label="delete">
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  )}
+                </Grid>
               </Grid>
-            </Grid>
-          ))}
-          <Button variant="outlined" onClick={addLocationCategory} sx={{ mt: 1 }}>
-            + Add Location
-          </Button>
+            ))}
+            <Button variant="outlined" onClick={addProduct} sx={{ mt: 1 }}>
+              + Add Product
+            </Button>
+          </Grid>
+
+          {/* Submit */}
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              fullWidth
+              sx={{
+                mt: 2,
+                backgroundColor: 'primary.main',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#1565c0' }
+              }}
+            >
+              Submit
+            </Button>
+          </Grid>
         </Grid>
 
-        {/* Official Email */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Official Email" name="emailOfficial" value={form.emailOfficial} onChange={handleChange} />
-        </Grid>
-
-        {/* Personal Email */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Personal Email" name="emailPersonal" value={form.emailPersonal} onChange={handleChange} />
-        </Grid>
-
-        {/* Contact */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Contact" name="contact" value={form.contact} onChange={handleChange} />
-        </Grid>
-
-        {/* Last/Current Designation */}
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label="Last/Current Designation" name="lastCurrentDesignation" value={form.lastCurrentDesignation} onChange={handleChange} />
-        </Grid>
-
-        {/* Product Categories */}
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>Product Categories</Typography>
-          {form.product.map((item, idx) => (
-            <Grid container spacing={2} key={idx} alignItems="center">
-              <Grid item xs={10}>
-                <TextField fullWidth label={`Product ${idx + 1}`} value={item} onChange={e => handleProductChange(idx, e.target.value)} />
-              </Grid>
-              <Grid item xs={2}>
-                {form.product.length > 1 && (
-                  <IconButton onClick={() => removeProduct(idx)}>
-                    <DeleteIcon color="error" />
-                  </IconButton>
-                )}
-              </Grid>
-            </Grid>
-          ))}
-          <Button variant="outlined" onClick={addProduct} sx={{ mt: 1 }}>
-            + Add Product
-          </Button>
-        </Grid>
-
-        {/* Submit */}
-        <Grid item xs={12}>
-          <Button variant="contained" onClick={handleSubmit}>Submit</Button>
-        </Grid>
-      </Grid>
-
-      <Snackbar
-        open={successOpen}
-        autoHideDuration={3000}
-        onClose={() => setSuccessOpen(false)}
-        message="Banker Directory created successfully!"
-      />
-    </Box>
+        <Snackbar
+          open={successOpen}
+          autoHideDuration={3000}
+          onClose={() => setSuccessOpen(false)}
+          message="Banker Directory created successfully!"
+        />
+      </Paper>
+    
   );
 };
 

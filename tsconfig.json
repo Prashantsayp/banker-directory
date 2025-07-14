@@ -30,5 +30,5 @@
     "incremental": true
   },
   "exclude": ["node_modules"],
-  "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", "pages/components/Common"]
+  "include": ["src", "next-env.d.ts", "**/*.ts", "**/*.tsx", "src/components/Common"]
 }

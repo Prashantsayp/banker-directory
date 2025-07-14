@@ -24,26 +24,24 @@ import LenderForm from './LenderForm';
 import BankerDirectoryForm from './BankerDirectoryForm';
 import UserForm from './userForm';
 
-const AvatarPageTitle = styled(Avatar)(
-  ({ theme }) => `
-    width: ${theme.spacing(8)};
-    height: ${theme.spacing(8)};
-    color: ${theme.colors.primary.main};
-    margin-right: ${theme.spacing(2)};
-    background: ${
-      theme.palette.mode === 'dark'
-        ? theme.colors.alpha.trueWhite[10]
-        : theme.colors.alpha.white[50]
-    };
-    box-shadow: ${
-      theme.palette.mode === 'dark'
-        ? '0 1px 0 ' +
-          theme.palette.primary.light +
-          ', 0px 2px 4px -3px rgba(0, 0, 0, 0.3), 0px 5px 16px -4px rgba(0, 0, 0, .5)'
-        : '0px 2px 4px -3px rgba(0, 0, 0, 0.1), 0px 5px 16px -4px rgba(0, 0, 0, 0.05)'
-    };
-  `
-);
+const AvatarPageTitle = styled(Avatar)(({ theme }) => `
+  width: ${theme.spacing(8)};
+  height: ${theme.spacing(8)};
+  color: ${theme.colors.primary.main};
+  margin-right: ${theme.spacing(2)};
+  background: ${
+    theme.palette.mode === 'dark'
+      ? theme.colors.alpha.trueWhite[10]
+      : theme.colors.alpha.white[50]
+  };
+  box-shadow: ${
+    theme.palette.mode === 'dark'
+      ? '0 1px 0 ' +
+        theme.palette.primary.light +
+        ', 0px 2px 4px -3px rgba(0, 0, 0, 0.3), 0px 5px 16px -4px rgba(0, 0, 0, .5)'
+      : '0px 2px 4px -3px rgba(0, 0, 0, 0.1), 0px 5px 16px -4px rgba(0, 0, 0, 0.05)'
+  };
+`);
 
 function PageHeader({
   onCreated,
@@ -62,9 +60,7 @@ function PageHeader({
   const isUserRoute = pathname.includes('user');
 
   useEffect(() => {
-
- const token = localStorage.getItem('token');
-
+    const token = localStorage.getItem('token');
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -94,9 +90,8 @@ function PageHeader({
     : FolderSharedIcon;
 
   const shouldShowButton =
-  (isUserRoute && userRole === 'admin') ||
-  (!isUserRoute); 
-
+    (isUserRoute && userRole === 'admin') ||
+    !isUserRoute;
 
   return (
     <>
@@ -122,6 +117,9 @@ function PageHeader({
           <Box mt={{ xs: 3, md: 0 }}>
             <Button
               variant="contained"
+             sx={{
+              color:"#fff"
+             }}
               startIcon={<AddTwoToneIcon fontSize="small" />}
               onClick={() => setOpen(true)}
             >
@@ -131,8 +129,26 @@ function PageHeader({
         )}
       </Box>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
-        <DialogTitle>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            backgroundColor: '#fff',
+            borderRadius: 3
+          }
+        }}
+      >
+        <DialogTitle
+          sx={{
+            backgroundColor: 'primary.main',
+            color: '#fff',
+            fontWeight: 600,
+            borderBottom: '1px solid #ddd'
+          }}
+        >
           {dialogTitle}
           <IconButton
             onClick={() => setOpen(false)}
@@ -141,7 +157,15 @@ function PageHeader({
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent dividers>
+
+        <DialogContent
+          dividers
+          sx={{
+            backgroundColor: '#fff',
+            px: 3,
+            py: 2
+          }}
+        >
           {isLenderRoute ? (
             <LenderForm
               onSuccess={() => {

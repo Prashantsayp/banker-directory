@@ -51,6 +51,38 @@ function UserOverview() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const textFieldStyles = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    color: '#333',
+    '& input': {
+      color: '#333',
+    },
+    '& fieldset': {
+      borderColor: '#c084fc',
+    },
+    '&:hover fieldset': {
+      borderColor: '#a855f7',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#9333ea',
+      boxShadow: '0 0 0 2px rgba(147, 51, 234, 0.2)',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#a855f7',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#9333ea',
+  },
+  '& .MuiSelect-select': {
+    color: '#333',
+    borderRadius: '12px',
+    backgroundColor: '#fff',
+  },
+};
+
 
   const [updatedUserData, setUpdatedUserData] = useState({
     fullName: '',
@@ -216,10 +248,10 @@ function UserOverview() {
 
   return (
     <>
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button variant="contained" color="primary" onClick={() => setCreateOpen(true)}>
+      <Box display="flex" justifyContent="flex-end" mb={2} >
+        {/* <Button variant="contained" color="primary" onClick={() => setCreateOpen(true)}>
           + Create User
-        </Button>
+        </Button> */}
       </Box>
 
       <Grid container spacing={4}>
@@ -324,54 +356,157 @@ function UserOverview() {
       </Grid>
 
       {/* Edit Dialog */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Edit User</DialogTitle>
-        <DialogContent>
-          <TextField label="Full Name" name="fullName" value={updatedUserData.fullName} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Email" name="email" value={updatedUserData.email} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Role</InputLabel>
-            <Select label="Role" value={updatedUserData.role} onChange={handleRoleChange}>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="user">User</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField label="Password" name="password" type="password" value={updatedUserData.password} onChange={handleChange} fullWidth sx={{ mb: 2 }} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleUpdate} color="primary">Update</Button>
-        </DialogActions>
-      </Dialog>
+   <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle sx={{ bgcolor: '#a78bfa', color: '#fff', fontWeight: 600 }}>
+        Edit User
+      </DialogTitle>
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
-        <DialogTitle>Create New User</DialogTitle>
-        <DialogContent>
-          <TextField label="Full Name" value={newUserData.fullName} onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Email" value={newUserData.email} onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Gender</InputLabel>
-            <Select value={newUserData.gender} onChange={(e) => setNewUserData({ ...newUserData, gender: e.target.value })}>
-              <MenuItem value="male">Male</MenuItem>
-              <MenuItem value="female">Female</MenuItem>
-              <MenuItem value="other">Other</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Role</InputLabel>
-            <Select value={newUserData.role} onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="user">User</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField label="Password" type="password" value={newUserData.password} onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })} fullWidth sx={{ mb: 2 }} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateUser} variant="contained" color="primary">Create</Button>
-        </DialogActions>
-      </Dialog>
+      <DialogContent sx={{ pt: 3, backgroundColor: '#f9f5ff' }}>
+        <TextField
+          label="Full Name"
+          name="fullName"
+          value={updatedUserData.fullName}
+          onChange={handleChange}
+          fullWidth
+          sx={{ mb: 3, ...textFieldStyles }}
+          variant="outlined"
+        />
+        <TextField
+          label="Email"
+          name="email"
+          value={updatedUserData.email}
+          onChange={handleChange}
+          fullWidth
+          sx={{ mb: 3, ...textFieldStyles }}
+          variant="outlined"
+        />
+        <FormControl fullWidth sx={{ mb: 3, ...textFieldStyles }}>
+          <InputLabel>Role</InputLabel>
+          <Select
+            label="Role"
+            value={updatedUserData.role}
+            onChange={handleRoleChange}
+          >
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="user">User</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          label="Password"
+          name="password"
+          type="password"
+          value={updatedUserData.password}
+          onChange={handleChange}
+          fullWidth
+          sx={{ mb: 1, ...textFieldStyles }}
+          variant="outlined"
+        />
+      </DialogContent>
+
+      <DialogActions sx={{ p: 2, backgroundColor: '#f9f5ff' }}>
+        <Button
+          onClick={handleClose}
+          sx={{
+            color: '#9333ea',
+            fontWeight: 600,
+            textTransform: 'none',
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleUpdate}
+          variant="contained"
+          sx={{
+            backgroundColor: '#9333ea',
+            color: '#fff',
+            borderRadius: '12px',
+            fontWeight: 600,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#7e22ce',
+            },
+          }}
+        >
+          Update
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+     <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>
+  <Box
+    sx={{
+      bgcolor: 'white',
+      borderRadius: 2,
+      m: 2,
+      overflow: 'hidden',
+    }}
+  >
+    <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+      Create New User
+    </DialogTitle>
+
+    <DialogContent sx={{ p: 3 ,backgroundcolor:"#fff"}}>
+      <TextField
+        label="Full Name"
+        value={newUserData.fullName}
+        onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
+        fullWidth
+        sx={{ mb: 2 }}
+      />
+
+      <TextField
+        label="Email"
+        value={newUserData.email}
+        onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+        fullWidth
+        sx={{ mb: 2 }}
+      />
+
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Gender</InputLabel>
+        <Select
+          value={newUserData.gender}
+          label="Gender"
+          onChange={(e) => setNewUserData({ ...newUserData, gender: e.target.value })}
+        >
+          <MenuItem value="male">Male</MenuItem>
+          <MenuItem value="female">Female</MenuItem>
+          <MenuItem value="other">Other</MenuItem>
+        </Select>
+      </FormControl>
+
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Role</InputLabel>
+        <Select
+          value={newUserData.role}
+          label="Role"
+          onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+        >
+          <MenuItem value="admin">Admin</MenuItem>
+          <MenuItem value="user">User</MenuItem>
+        </Select>
+      </FormControl>
+
+      <TextField
+        label="Password"
+        type="password"
+        value={newUserData.password}
+        onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+        fullWidth
+        sx={{ mb: 2 }}
+      />
+    </DialogContent>
+
+    <DialogActions sx={{ px: 3, pb: 3 }}>
+      <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+      <Button onClick={handleCreateUser} variant="contained" color="primary">
+        Create
+      </Button>
+    </DialogActions>
+  </Box>
+</Dialog>
+
 
       {/* Snackbar */}
       <CustomSnackbar

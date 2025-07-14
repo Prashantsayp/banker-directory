@@ -17,7 +17,6 @@ import {
   TextField,
   Container,
   Card,
-  InputAdornment,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -27,8 +26,9 @@ import {
 import axios from 'axios';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { styled } from '@mui/material/styles';
-import ClearIcon from '@mui/icons-material/Clear';
 import { jwtDecode } from 'jwt-decode';
+import SearchTextField from '../../../pages/components/searchTextFied';
+
 
 interface Banker {
   _id: string;
@@ -156,181 +156,241 @@ const handleSaveChanges = async () => {
   return (
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
-        <Box display="flex" gap={1} flexWrap="wrap">
-          <TextField
-            label="Search by Location"
-            variant="outlined"
-            value={searchLocation}
-            onChange={(e) => setSearchLocation(e.target.value)}
-            sx={{ mb: 1, maxWidth: 200 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start">📍</InputAdornment>,
-              endAdornment: searchLocation && (
-                <ClearIcon
-                  onClick={() => handleClearSearch('location')}
-                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
-                />
-              )
-            }}
-            fullWidth
-          />
+      <Box display="flex" gap={1} flexWrap="wrap">
+  <SearchTextField
+    label="Search by Location"
+    value={searchLocation}
+    onChange={setSearchLocation}
+    onClear={() => handleClearSearch('location')}
+    icon="📍"
+  />
+  <SearchTextField
+    label="Search by Associated With"
+    value={searchAssociatedWith}
+    onChange={setSearchAssociatedWith}
+    onClear={() => handleClearSearch('associated')}
+    icon="🏦"
+  />
+  <SearchTextField
+    label="Search by Official Email"
+    value={searchEmailOfficial}
+    onChange={setSearchEmailOfficial}
+    onClear={() => handleClearSearch('emailOfficial')}
+    icon="📧"
+  />
+  <SearchTextField
+    label="Search by Banker"
+    value={searchBanker}
+    onChange={setSearchBanker}
+    onClear={() => handleClearSearch('banker')}
+    icon="👤"
+    maxWidth={250}
+  />
+</Box>
 
-          <TextField
-            label="Search by Associated With"
-            variant="outlined"
-            value={searchAssociatedWith}
-            onChange={(e) => setSearchAssociatedWith(e.target.value)}
-            sx={{ mb: 1, maxWidth: 200 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start">🏦</InputAdornment>,
-              endAdornment: searchAssociatedWith && (
-                <ClearIcon
-                  onClick={() => handleClearSearch('associated')}
-                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
-                />
-              )
-            }}
-            fullWidth
-          />
-<TextField
-  label="Search by Official Email"
-  variant="outlined"
-  value={searchEmailOfficial}
-  onChange={(e) => setSearchEmailOfficial(e.target.value)}
-  sx={{ mb: 1, maxWidth: 200 }}
-  InputProps={{
-    startAdornment: <InputAdornment position="start">📧</InputAdornment>,
-    endAdornment: searchEmailOfficial && (
-      <ClearIcon
-        onClick={() => handleClearSearch('emailOfficial')}
-        sx={{ cursor: 'pointer', color: 'text.secondary' }}
-      />
-    )
-  }}
-  fullWidth
-/>
-
-          <TextField
-            label="Search by Banker"
-            variant="outlined"
-            value={searchBanker}
-            onChange={(e) => setSearchBanker(e.target.value)}
-            sx={{ mb: 1, maxWidth: 250 }}
-            InputProps={{
-              startAdornment: <InputAdornment position="start">👤</InputAdornment>,
-              endAdornment: searchBanker && (
-                <ClearIcon
-                  onClick={() => handleClearSearch('banker')}
-                  sx={{ cursor: 'pointer', color: 'text.secondary' }}
-                />
-              )
-            }}
-            fullWidth
-          />
-          
-        </Box>
       </Grid>
 
-      {filteredBankers.map((banker) => (
-        <Grid item xs={12} sm={6} md={4} key={banker._id}>
-          <Paper elevation={6} sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-            <Box display="flex" alignItems="center" mb={2}>
-              <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                {banker.bankerName.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="h6">{banker.bankerName}</Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {banker.associatedWith}
-                </Typography>
-              </Box>
-            </Box>
+ {filteredBankers.map((banker) => (
+  <Grid item xs={12} sm={6} md={4} key={banker._id}>
+    <Paper
+      elevation={2}
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        height: '100%',
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+          borderColor: '#cbd5e1'
+        }
+      }}
+    >
+      <Box display="flex" alignItems="center" mb={2}>
+        <Avatar sx={{ bgcolor: '#2563EB', mr: 2 }}>
+          {banker.bankerName.charAt(0).toUpperCase()}
+        </Avatar>
+        <Box>
+          <Typography
+            variant="h6"
+            sx={{ color: '#2E3A59', fontWeight: 600 }}
+          >
+            {banker.bankerName}
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            sx={{ color: '#6B7280' }}
+          >
+            {banker.associatedWith}
+          </Typography>
+        </Box>
+      </Box>
 
-            <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 2 }} />
 
-            <Typography variant="subtitle2" gutterBottom>
-              Location Serve:
-            </Typography>
-            <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
-              {banker.locationCategories.map((loc, index) => (
-                <Chip key={index} label={loc} size="small" variant="outlined" />
-              ))}
-            </Stack>
+      <Typography
+        variant="subtitle2"
+        sx={{ color: '#2E3A59', fontWeight: 500 }}
+        gutterBottom
+      >
+        Location Serve:
+      </Typography>
+      <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
+        {banker.locationCategories.map((loc, index) => (
+          <Chip
+            key={index}
+            label={loc}
+            size="small"
+            variant="outlined"
+            sx={{
+              color: '#2563EB',
+              borderColor: '#93C5FD',
+              backgroundColor: '#F0F9FF',
+              fontWeight: 500
+            }}
+          />
+        ))}
+      </Stack>
 
-            <Typography variant="subtitle2">Products:</Typography>
-            <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
-              {(banker.product || []).map((prod, index) => (
-                <Chip key={index} label={prod} size="small" color="success" variant="outlined" />
-              ))}
-            </Stack>
+      <Typography
+        variant="subtitle2"
+        sx={{ color: '#2E3A59', fontWeight: 500 }}
+        gutterBottom
+      >
+        Products:
+      </Typography>
+      <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
+        {(banker.product || []).map((prod, index) => (
+          <Chip
+            key={index}
+            label={prod}
+            size="small"
+            variant="outlined"
+            sx={{
+              color: '#047857',
+              borderColor: '#6EE7B7',
+              backgroundColor: '#ECFDF5',
+              fontWeight: 500
+            }}
+          />
+        ))}
+      </Stack>
 
-            <Box mb={1}>
-              <Typography variant="body2" gutterBottom>
-                <strong>Official Email:</strong> {banker.emailOfficial}
-              </Typography>
-              {banker.emailPersonal && (
-                <Typography variant="body2" gutterBottom>
-                  <strong>Personal Email:</strong> {banker.emailPersonal}
-                </Typography>
-              )}
-              <Typography variant="body2">
-                <strong>Contact:</strong> {banker.contact}
-              </Typography>
-            </Box>
+      <Box mb={1}>
+        <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
+          <strong>Official Email:</strong> {banker.emailOfficial}
+        </Typography>
+        {banker.emailPersonal && (
+          <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
+            <strong>Personal Email:</strong> {banker.emailPersonal}
+          </Typography>
+        )}
+        <Typography variant="body2" sx={{ color: '#374151' }}>
+          <strong>Contact:</strong> {banker.contact}
+        </Typography>
+      </Box>
 
-            {role === 'admin' && (
-              <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
-                <Chip label="Edit" onClick={() => handleEdit(banker)} color="primary" clickable />
-                <Chip label="Delete" onClick={() => handleDelete(banker._id)} color="error" clickable />
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-      ))}
+      {role === 'admin' && (
+        <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+          <Chip
+            label="Edit"
+            onClick={() => handleEdit(banker)}
+            clickable
+            sx={{
+              color: '#1D4ED8',
+              borderColor: '#1D4ED8',
+              backgroundColor: '#EEF2FF',
+              '&:hover': {
+                backgroundColor: '#E0E7FF'
+              }
+            }}
+            variant="outlined"
+          />
+          <Chip
+            label="Delete"
+            onClick={() => handleDelete(banker._id)}
+            clickable
+            sx={{
+              color: '#B91C1C',
+              borderColor: '#FCA5A5',
+              backgroundColor: '#FEF2F2',
+              '&:hover': {
+                backgroundColor: '#FEE2E2'
+              }
+            }}
+            variant="outlined"
+          />
+        </Box>
+      )}
+    </Paper>
+  </Grid>
+))}
 
-      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Banker</DialogTitle>
-        <DialogContent sx={{ mt: 1 }}>
-          {editBanker && (
-            <Stack spacing={2} sx={{mt:2}} >
-              <TextField
-                label="Banker Name"
-                value={editBanker.bankerName}
-                onChange={(e) => setEditBanker({ ...editBanker, bankerName: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Associated With"
-                value={editBanker.associatedWith}
-                onChange={(e) => setEditBanker({ ...editBanker, associatedWith: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Official Email"
-                value={editBanker.emailOfficial}
-                onChange={(e) => setEditBanker({ ...editBanker, emailOfficial: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Personal Email"
-                value={editBanker.emailPersonal || ''}
-                onChange={(e) => setEditBanker({ ...editBanker, emailPersonal: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Contact"
-                value={editBanker.contact}
-                onChange={(e) => setEditBanker({ ...editBanker, contact: e.target.value })}
-                fullWidth
-              />
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveChanges}>Save Changes</Button>
-        </DialogActions>
-      </Dialog>
+
+<Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+  {/* Dialog Header with white background and primary color text */}
+  <DialogTitle sx={{ color: '#fff', bgcolor: 'primary.main' }}>
+    Edit Banker
+  </DialogTitle>
+
+  {/* Dialog Content with white background and dark text field theme */}
+  <DialogContent sx={{ mt: 0, bgcolor: '#fff' }}>
+    {editBanker && (
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        {[
+          { label: 'Banker Name', key: 'bankerName' },
+          { label: 'Associated With', key: 'associatedWith' },
+          { label: 'Official Email', key: 'emailOfficial' },
+          { label: 'Personal Email', key: 'emailPersonal' },
+          { label: 'Contact', key: 'contact' }
+        ].map(({ label, key }) => (
+          <TextField
+            key={key}
+            label={label}
+            value={(editBanker as any)[key] || ''}
+            onChange={(e) =>
+              setEditBanker({ ...editBanker, [key]: e.target.value })
+            }
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                color: 'black', // Input text color
+                '& fieldset': {
+                  borderColor: 'primary.main'
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.main'
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main'
+                }
+              },
+              '& .MuiInputLabel-root': {
+                color: 'primary.main'
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: 'primary.main'
+              }
+            }}
+          />
+        ))}
+      </Stack>
+    )}
+  </DialogContent>
+
+  {/* Dialog Footer with white background */}
+  <DialogActions sx={{ bgcolor: '#fff', px: 3, py: 2 }}>
+    <Button onClick={() => setEditModalOpen(false)} color="inherit" sx={{ color: 'primary.main' }}>
+      Cancel
+    </Button>
+    <Button variant="contained" onClick={handleSaveChanges} color="primary">
+      Save Changes
+    </Button>
+  </DialogActions>
+</Dialog>
+
+
     </Grid>
   );
 };
