@@ -63,29 +63,29 @@ const BankerOverview = ({ role }: { role: string | null }) => {
       .catch((err) => console.error('❌ Error:', err));
   }, []);
 
- useEffect(() => {
+useEffect(() => {
   const filtered = bankers.filter((banker) => {
     const locationQuery = searchLocation.trim().toLowerCase();
     const bankerQuery = searchBanker.trim().toLowerCase();
     const associatedQuery = searchAssociatedWith.trim().toLowerCase();
-    const emailQuery = searchEmailOfficial.trim().toLowerCase(); // 👈 Add this line
+    const emailQuery = searchEmailOfficial.trim().toLowerCase();
 
     const matchesLocation = locationQuery
-      ? banker.locationCategories.some((location) =>
-          location.toLowerCase().includes(locationQuery)
+      ? (banker.locationCategories || []).some((location) =>
+          (location || '').toLowerCase().includes(locationQuery)
         )
       : true;
 
     const matchesBanker = bankerQuery
-      ? banker.bankerName.toLowerCase().includes(bankerQuery)
+      ? (banker.bankerName || '').toLowerCase().includes(bankerQuery)
       : true;
 
     const matchesAssociatedWith = associatedQuery
-      ? banker.associatedWith.toLowerCase().includes(associatedQuery)
+      ? (banker.associatedWith || '').toLowerCase().includes(associatedQuery)
       : true;
 
     const matchesEmail = emailQuery
-      ? banker.emailOfficial.toLowerCase().includes(emailQuery)
+      ? (banker.emailOfficial || '').toLowerCase().includes(emailQuery)
       : true;
 
     return (
@@ -97,7 +97,13 @@ const BankerOverview = ({ role }: { role: string | null }) => {
   });
 
   setFilteredBankers(filtered);
-}, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial, bankers]);
+}, [
+  searchLocation,
+  searchBanker,
+  searchAssociatedWith,
+  searchEmailOfficial,
+  bankers
+]);
 
 const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
   if (type === 'location') setSearchLocation('');
@@ -326,7 +332,13 @@ const handleSaveChanges = async () => {
     </Paper>
   </Grid>
 ))}
-
+{filteredBankers.length === 0 && (
+  <Grid item xs={12}>
+    <Typography align="center" color="text.secondary">
+      No bankers match your search criteria.
+    </Typography>
+  </Grid>
+)}
 
 <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
   {/* Dialog Header with white background and primary color text */}

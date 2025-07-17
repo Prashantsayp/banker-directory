@@ -189,12 +189,12 @@ function SignupPage() {
               required
             >
               <MenuItem value="user">User</MenuItem>
-              <MenuItem value="lender">Lender</MenuItem>
+              {/* <MenuItem value="lender">Lender</MenuItem>
               <MenuItem value="banker">Banker</MenuItem>
               <MenuItem value="channel partner">Channel Partner</MenuItem>
               <MenuItem value="dsa">DSA</MenuItem>
               <MenuItem value="dma">DMA</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem>
+              <MenuItem value="agent">Agent</MenuItem> */}
             </TextField>
 
             <TextField
