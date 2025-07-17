@@ -54,6 +54,11 @@ const BankerOverview = ({ role }: { role: string | null }) => {
  
 
   useEffect(() => {
+  console.log('Total bankers fetched:', bankers.length);
+}, [bankers]);
+
+
+  useEffect(() => {
     axios
       .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
       .then((res) => {
@@ -63,47 +68,27 @@ const BankerOverview = ({ role }: { role: string | null }) => {
       .catch((err) => console.error('❌ Error:', err));
   }, []);
 
-useEffect(() => {
-  const filtered = bankers.filter((banker) => {
-    const locationQuery = searchLocation.trim().toLowerCase();
-    const bankerQuery = searchBanker.trim().toLowerCase();
-    const associatedQuery = searchAssociatedWith.trim().toLowerCase();
-    const emailQuery = searchEmailOfficial.trim().toLowerCase();
+ useEffect(() => {
+    const fetchFilteredBankers = async () => {
+      try {
+        const params: any = {};
+        if (searchLocation.trim()) params.location = searchLocation.trim();
+        if (searchBanker.trim()) params.bankerName = searchBanker.trim();
+        if (searchAssociatedWith.trim()) params.associatedWith = searchAssociatedWith.trim();
+        if (searchEmailOfficial.trim()) params.emailOfficial = searchEmailOfficial.trim();
 
-    const matchesLocation = locationQuery
-      ? (banker.locationCategories || []).some((location) =>
-          (location || '').toLowerCase().includes(locationQuery)
-        )
-      : true;
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
+          { params }
+        );
+        setFilteredBankers(response.data);
+      } catch (error) {
+        console.error('❌ Backend Filter Error:', error);
+      }
+    };
 
-    const matchesBanker = bankerQuery
-      ? (banker.bankerName || '').toLowerCase().includes(bankerQuery)
-      : true;
-
-    const matchesAssociatedWith = associatedQuery
-      ? (banker.associatedWith || '').toLowerCase().includes(associatedQuery)
-      : true;
-
-    const matchesEmail = emailQuery
-      ? (banker.emailOfficial || '').toLowerCase().includes(emailQuery)
-      : true;
-
-    return (
-      matchesLocation &&
-      matchesBanker &&
-      matchesAssociatedWith &&
-      matchesEmail
-    );
-  });
-
-  setFilteredBankers(filtered);
-}, [
-  searchLocation,
-  searchBanker,
-  searchAssociatedWith,
-  searchEmailOfficial,
-  bankers
-]);
+    fetchFilteredBankers();
+  }, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial]);
 
 const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
   if (type === 'location') setSearchLocation('');
@@ -163,36 +148,36 @@ const handleSaveChanges = async () => {
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
       <Box display="flex" gap={1} flexWrap="wrap">
-  <SearchTextField
-    label="Search by Location"
-    value={searchLocation}
-    onChange={setSearchLocation}
-    onClear={() => handleClearSearch('location')}
-    icon="📍"
-  />
-  <SearchTextField
-    label="Search by Associated With"
-    value={searchAssociatedWith}
-    onChange={setSearchAssociatedWith}
-    onClear={() => handleClearSearch('associated')}
-    icon="🏦"
-  />
-  <SearchTextField
-    label="Search by Official Email"
-    value={searchEmailOfficial}
-    onChange={setSearchEmailOfficial}
-    onClear={() => handleClearSearch('emailOfficial')}
-    icon="📧"
-  />
-  <SearchTextField
-    label="Search by Banker"
-    value={searchBanker}
-    onChange={setSearchBanker}
-    onClear={() => handleClearSearch('banker')}
-    icon="👤"
-    maxWidth={250}
-  />
-</Box>
+          <SearchTextField
+            label="Search by Location"
+            value={searchLocation}
+            onChange={setSearchLocation}
+            onClear={() => handleClearSearch('location')}
+            icon="📍"
+          />
+          <SearchTextField
+            label="Search by Associated With"
+            value={searchAssociatedWith}
+            onChange={setSearchAssociatedWith}
+            onClear={() => handleClearSearch('associated')}
+            icon="🏦"
+          />
+          <SearchTextField
+            label="Search by Official Email"
+            value={searchEmailOfficial}
+            onChange={setSearchEmailOfficial}
+            onClear={() => handleClearSearch('emailOfficial')}
+            icon="📧"
+          />
+          <SearchTextField
+            label="Search by Banker"
+            value={searchBanker}
+            onChange={setSearchBanker}
+            onClear={() => handleClearSearch('banker')}
+            icon="👤"
+            maxWidth={250}
+          />
+        </Box>
 
       </Grid>
 
