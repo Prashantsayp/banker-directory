@@ -54,7 +54,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
  
 
   useEffect(() => {
-  console.log('Total bankers fetched:', bankers.length);
+  console.log('Total bankers fetched::', bankers.length);
 }, [bankers]);
 
 
