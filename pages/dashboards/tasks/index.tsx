@@ -1,17 +1,15 @@
 import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState, useEffect } from 'react';
 import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
 import Footer from '@/components/Footer';
 import {
   Grid,
   Tab,
   Tabs,
- 
   Container,
   Card,
   Box,
-
   styled,
   Fade
 } from '@mui/material';
@@ -21,38 +19,36 @@ import TeamOverview from '@/content/Dashboards/Tasks/TeamOverview';
 
 import PeopleIcon from '@mui/icons-material/People';
 
-const TabsContainerWrapper = styled(Box)(
-  ({ theme }) => `
-    padding: ${theme.spacing(0, 1)};
-    margin-bottom: ${theme.spacing(2)};
-    border-bottom: 1px solid ${theme.palette.divider};
+const TabsContainerWrapper = styled(Box)(({ theme }) => `
+  padding: ${theme.spacing(0, 1)};
+  margin-bottom: ${theme.spacing(2)};
+  border-bottom: 1px solid ${theme.palette.divider};
 
-    .MuiTabs-root {
-      min-height: 40px;
+  .MuiTabs-root {
+    min-height: 40px;
+  }
+
+  .MuiTab-root {
+    font-size: ${theme.typography.pxToRem(13)};
+    padding: ${theme.spacing(1.2, 2)};
+    min-height: 40px;
+    text-transform: none;
+    gap: ${theme.spacing(1)};
+  }
+
+  .MuiTabs-indicator {
+    display: flex;
+    justify-content: center;
+
+    &::after {
+      content: '';
+      width: 30px;
+      height: 3px;
+      background-color: ${theme.palette.primary.main};
+      border-radius: 2px;
     }
-
-    .MuiTab-root {
-      font-size: ${theme.typography.pxToRem(13)};
-      padding: ${theme.spacing(1.2, 2)};
-      min-height: 40px;
-      text-transform: none;
-      gap: ${theme.spacing(1)};
-    }
-
-    .MuiTabs-indicator {
-      display: flex;
-      justify-content: center;
-
-      &::after {
-        content: '';
-        width: 30px;
-        height: 3px;
-        background-color: ${theme.palette.primary.main};
-        border-radius: 2px;
-      }
-    }
-  `
-);
+  }
+`);
 
 const SectionCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -63,6 +59,11 @@ const SectionCard = styled(Card)(({ theme }) => ({
 
 function DashboardTasks() {
   const [currentTab, setCurrentTab] = useState<string>('bankers');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const tabs = [
     { value: 'bankers', label: 'Overview', icon: <PeopleIcon fontSize="small" /> },
@@ -71,6 +72,8 @@ function DashboardTasks() {
   const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
     setCurrentTab(value);
   };
+
+  if (!mounted) return null;
 
   return (
     <>

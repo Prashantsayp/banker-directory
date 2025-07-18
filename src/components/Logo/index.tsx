@@ -15,22 +15,22 @@ const LogoWrapper = styled(Link)(
 `
 );
 
-const LogoImage = styled('img')(
-  () => `
-        max-width: 100%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 8px;
-`
-);
+// const LogoImage = styled('img')(
+//   () => `
+//         max-width: 100%;
+//         height: auto;
+//         object-fit: contain;
+//         border-radius: 8px;
+// `
+// );
 
 function Logo() {
   return (
     <LogoWrapper href="/">
-      <LogoImage
+      {/* <LogoImage
         src="/static/images/logo/f2fin.png"
         alt="Logo"
-      />
+      /> */}
       <Box
         component="span"
         sx={{

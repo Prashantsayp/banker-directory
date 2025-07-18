@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 
 import {
-  Avatar,
+
   Box,
   Button,
   Divider,
@@ -105,7 +105,7 @@ function HeaderUserbox() {
   return (
     <>
       <UserBoxButton color="secondary" ref={ref} onClick={handleOpen}>
-        <Avatar variant="rounded" alt={userName} src="/static/images/logo/f2fin.png" />
+        {/* <Avatar variant="rounded" alt={userName} src="/static/images/logo/f2fin.png" /> */}
         <Hidden mdDown>
           <UserBoxText>
             <UserBoxLabel variant="body1">{userName}</UserBoxLabel>

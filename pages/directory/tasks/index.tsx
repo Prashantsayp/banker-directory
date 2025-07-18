@@ -3,6 +3,7 @@ import SidebarLayout from '@/layouts/SidebarLayout';
 import { ChangeEvent, useEffect, useState } from 'react';
 import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
 import Footer from '@/components/Footer';
+
 import {
   Box,
   Grid,
@@ -21,13 +22,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  Autocomplete 
 } from '@mui/material';
 import axios from 'axios';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
 import SearchTextField from '../../../pages/components/searchTextFied';
+import FullScreenLoader from '../../components/FullScreenLoader';
+import { useRouter } from 'next/router';
 
 
 interface Banker {
@@ -51,7 +55,9 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editBanker, setEditBanker] = useState<Banker | null>(null);
- 
+ const [loading, setLoading] = useState(false);
+const router = useRouter();
+
 
   useEffect(() => {
   console.log('Total bankers fetched::', bankers.length);
@@ -68,27 +74,34 @@ const BankerOverview = ({ role }: { role: string | null }) => {
       .catch((err) => console.error('❌ Error:', err));
   }, []);
 
- useEffect(() => {
-    const fetchFilteredBankers = async () => {
-      try {
-        const params: any = {};
-        if (searchLocation.trim()) params.location = searchLocation.trim();
-        if (searchBanker.trim()) params.bankerName = searchBanker.trim();
-        if (searchAssociatedWith.trim()) params.associatedWith = searchAssociatedWith.trim();
-        if (searchEmailOfficial.trim()) params.emailOfficial = searchEmailOfficial.trim();
 
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
-          { params }
-        );
-        setFilteredBankers(response.data);
-      } catch (error) {
-        console.error('❌ Backend Filter Error:', error);
-      }
-    };
+useEffect(() => {
+  const fetchFiltered = async () => {
+   
+    setLoading(true);
+    try {
+      const params: any = {};
+      if (searchLocation.trim()) params.location = searchLocation.trim();
+      if (searchBanker.trim()) params.bankerName = searchBanker.trim();
+      if (searchAssociatedWith.trim()) params.associatedWith = searchAssociatedWith.trim();
+      if (searchEmailOfficial.trim()) params.emailOfficial = searchEmailOfficial.trim();
 
-    fetchFilteredBankers();
-  }, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial]);
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
+        { params }
+      );
+      setFilteredBankers(res.data);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    fetchFiltered();
+ 
+}, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial]);
+
 
 const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
   if (type === 'location') setSearchLocation('');
@@ -102,49 +115,55 @@ const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOf
     setEditModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this banker?')) {
-      try {
-        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
-        setBankers((prev) => prev.filter((banker) => banker._id !== id));
-      } catch (err) {
-        console.error('❌ Failed to delete banker:', err);
-        alert('Something went wrong while deleting!');
-      }
+ const handleDelete = async (id: string) => {
+  if (confirm('Are you sure you want to delete this banker?')) {
+    try {
+      setLoading(true);
+      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
+      router.reload(); // 👈 Refresh the page
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Delete failed!');
+    } finally {
+      setLoading(false);
     }
-  };
+  }
+};
 
 const handleSaveChanges = async () => {
   if (!editBanker) return;
 
-  const updatePayload = {
-    bankerName: editBanker.bankerName,
-    associatedWith: editBanker.associatedWith,
-    emailOfficial: editBanker.emailOfficial,
-    emailPersonal: editBanker.emailPersonal || '',
-    contact: editBanker.contact,
-    locationCategories: editBanker.locationCategories || [],
-    product: editBanker.product || []
-  };
+  const { _id, ...updatePayload } = editBanker;
 
   try {
+    setLoading(true);
     await axios.put(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${editBanker._id}`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`,
       updatePayload
     );
+
+    // Update UI
     setBankers((prev) =>
-      prev.map((b) => (b._id === editBanker._id ? { ...editBanker } : b))
+      prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b))
     );
+    setFilteredBankers((prev) =>
+      prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b))
+    );
+
     setEditModalOpen(false);
-  } catch (err: any) {
-    console.error('❌ Update Failed:', err.response?.data || err.message);
-    alert(`Update failed: ${err.response?.data?.message || err.message}`);
+  } catch (err) {
+    console.error('Update failed:', err);
+    alert('Update failed!');
+  } finally {
+    setLoading(false);
   }
 };
 
 
 
+
   return (
+    
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
       <Box display="flex" gap={1} flexWrap="wrap">
@@ -332,49 +351,156 @@ const handleSaveChanges = async () => {
   </DialogTitle>
 
   {/* Dialog Content with white background and dark text field theme */}
-  <DialogContent sx={{ mt: 0, bgcolor: '#fff' }}>
-    {editBanker && (
-      <Stack spacing={2} sx={{ mt: 1 }}>
-        {[
-          { label: 'Banker Name', key: 'bankerName' },
-          { label: 'Associated With', key: 'associatedWith' },
-          { label: 'Official Email', key: 'emailOfficial' },
-          { label: 'Personal Email', key: 'emailPersonal' },
-          { label: 'Contact', key: 'contact' }
-        ].map(({ label, key }) => (
-          <TextField
-            key={key}
-            label={label}
-            value={(editBanker as any)[key] || ''}
-            onChange={(e) =>
-              setEditBanker({ ...editBanker, [key]: e.target.value })
+<DialogContent sx={{ mt: 0, bgcolor: '#fff' }}>
+  {editBanker && (
+    <Stack spacing={2} sx={{ mt: 1 }}>
+      {/* Text Fields */}
+      {[ 
+        { label: 'Banker Name', key: 'bankerName' },
+        { label: 'Associated With', key: 'associatedWith' },
+        { label: 'Official Email', key: 'emailOfficial' },
+        { label: 'Personal Email', key: 'emailPersonal' },
+        { label: 'Contact', key: 'contact' }
+      ].map(({ label, key }) => (
+        <TextField
+          key={key}
+          label={label}
+          value={editBanker?.[key] ?? ''}
+          onChange={(e) =>
+            setEditBanker({ ...editBanker, [key]: e.target.value })
+          }
+          fullWidth
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              color: '#1F2937',
+              backgroundColor: '#F9FAFB',
+              '& fieldset': { borderColor: '#60A5FA' },
+              '&:hover fieldset': { borderColor: '#3B82F6' },
+              '&.Mui-focused fieldset': { borderColor: '#2563EB' }
+            },
+            '& .MuiInputLabel-root': { color: '#2563EB' },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
+          }}
+        />
+      ))}
+
+      {/* Product Field as Autocomplete */}
+     <Autocomplete<string, true, true, true>
+  multiple
+  freeSolo
+  options={[]} // Optional: You can provide suggestions like ['PL', 'BL']
+  value={editBanker?.product || []}
+  onChange={(_event, newValue) =>
+    setEditBanker({
+      ...editBanker,
+      product: newValue
+        .map((val) => (typeof val === 'string' ? val.trim() : ''))
+        .filter(Boolean)
+    })
+  }
+  renderTags={(value, getTagProps) =>
+    value.map((option, index) => (
+    
+       <Chip
+      key={option + index}
+        label={option}
+        {...getTagProps({ index })}
+        sx={{
+          backgroundColor: '#3B82F6',
+          color: '#FFFFFF',
+          borderRadius: '8px',
+          fontWeight: 500,
+          fontSize: '0.85rem',
+          '& .MuiChip-deleteIcon': {
+            color: '#FFFFFF',
+            '&:hover': {
+              color: '#E0E7FF'
             }
-            fullWidth
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: 'black', // Input text color
-                '& fieldset': {
-                  borderColor: 'primary.main'
-                },
-                '&:hover fieldset': {
-                  borderColor: 'primary.main'
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'primary.main'
-                }
-              },
-              '& .MuiInputLabel-root': {
-                color: 'primary.main'
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: 'primary.main'
-              }
-            }}
-          />
-        ))}
-      </Stack>
-    )}
-  </DialogContent>
+          }
+        }}
+      />
+    ))
+  }
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Products"
+      fullWidth
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          color: '#1F2937',
+          backgroundColor: '#F9FAFB',
+          '& fieldset': { borderColor: '#60A5FA' },
+          '&:hover fieldset': { borderColor: '#3B82F6' },
+          '&.Mui-focused fieldset': { borderColor: '#2563EB' }
+        },
+        '& .MuiInputLabel-root': { color: '#2563EB' },
+        '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
+      }}
+    />
+  )}
+/>
+
+
+     <Autocomplete<string, true, true, true>
+  multiple
+  freeSolo
+  options={[]} // Add suggestions if needed
+  value={editBanker?.locationCategories || []}
+  onChange={(_event, newValue) =>
+    setEditBanker({
+      ...editBanker,
+      locationCategories: newValue
+        .map((val) => (typeof val === 'string' ? val.trim() : ''))
+        .filter(Boolean)
+    })
+  }
+  renderTags={(value: readonly string[], getTagProps) =>
+    value.map((option: string, index: number) => (
+    
+       <Chip
+      key={option + index}
+        label={option}
+        {...getTagProps({ index })}
+        sx={{
+          backgroundColor: '#3B82F6',
+          color: '#FFFFFF',
+          borderRadius: '8px',
+          fontWeight: 500,
+          fontSize: '0.85rem',
+          '& .MuiChip-deleteIcon': {
+            color: '#FFFFFF',
+            '&:hover': {
+              color: '#E0E7FF'
+            }
+          }
+        }}
+      />
+    ))
+  }
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Location Categories"
+      fullWidth
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          color: '#1F2937',
+          backgroundColor: '#F9FAFB',
+          '& fieldset': { borderColor: '#60A5FA' },
+          '&:hover fieldset': { borderColor: '#3B82F6' },
+          '&.Mui-focused fieldset': { borderColor: '#2563EB' }
+        },
+        '& .MuiInputLabel-root': { color: '#2563EB' },
+        '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
+      }}
+    />
+  )}
+/>
+
+    </Stack>
+  )}
+</DialogContent>
 
   {/* Dialog Footer with white background */}
   <DialogActions sx={{ bgcolor: '#fff', px: 3, py: 2 }}>
@@ -386,9 +512,11 @@ const handleSaveChanges = async () => {
     </Button>
   </DialogActions>
 </Dialog>
+<FullScreenLoader open={loading} />
 
 
     </Grid>
+    
   );
 };
 

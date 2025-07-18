@@ -33,6 +33,7 @@
     "dom": "^0.0.3",
     "framer-motion": "^12.16.0",
     "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.21",
     "next": "12.1.6",
     "next-images": "1.8.4",
     "nprogress": "0.2.0",
