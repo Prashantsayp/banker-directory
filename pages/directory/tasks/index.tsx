@@ -247,7 +247,8 @@ const handleSaveChanges = async () => {
         Location Serve:
       </Typography>
       <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
-        {banker.locationCategories.map((loc, index) => (
+       {(banker.locationCategories || []).map((loc, index) => (
+
           <Chip
             key={index}
             label={loc}
@@ -383,26 +384,25 @@ const handleSaveChanges = async () => {
           }}
         />
       ))}
-
-      {/* Product Field as Autocomplete */}
-     <Autocomplete<string, true, true, true>
+<Autocomplete<string, true, true, true>
   multiple
   freeSolo
-  options={[]} // Optional: You can provide suggestions like ['PL', 'BL']
+  options={[]} // Optional: suggestions like ['PL', 'BL']
   value={editBanker?.product || []}
-  onChange={(_event, newValue) =>
+  onChange={(_event, newValue) => {
+    if (!editBanker) return;
+
     setEditBanker({
       ...editBanker,
-      product: newValue
+      product: (newValue || [])
         .map((val) => (typeof val === 'string' ? val.trim() : ''))
         .filter(Boolean)
-    })
-  }
+    });
+  }}
   renderTags={(value, getTagProps) =>
     value.map((option, index) => (
-    
-       <Chip
-      key={option + index}
+      <Chip
+        key={option + index}
         label={option}
         {...getTagProps({ index })}
         sx={{
@@ -413,9 +413,7 @@ const handleSaveChanges = async () => {
           fontSize: '0.85rem',
           '& .MuiChip-deleteIcon': {
             color: '#FFFFFF',
-            '&:hover': {
-              color: '#E0E7FF'
-            }
+            '&:hover': { color: '#E0E7FF' }
           }
         }}
       />
@@ -440,6 +438,7 @@ const handleSaveChanges = async () => {
     />
   )}
 />
+
 
 
      <Autocomplete<string, true, true, true>
