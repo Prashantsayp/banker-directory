@@ -219,7 +219,8 @@ const handleSaveChanges = async () => {
     >
       <Box display="flex" alignItems="center" mb={2}>
         <Avatar sx={{ bgcolor: '#2563EB', mr: 2 }}>
-          {banker.bankerName.charAt(0).toUpperCase()}
+      {banker.bankerName?.charAt(0)?.toUpperCase() || 'B'}
+
         </Avatar>
         <Box>
           <Typography
