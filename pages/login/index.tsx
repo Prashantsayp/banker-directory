@@ -13,7 +13,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import Link from 'next/link';
-import CustomSnackbar from '@/components/CustomSnackbar'; 
+import CustomSnackbar from '@/components/CustomSnackbar';
 import { SnackbarCloseReason } from '@mui/material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -75,6 +75,10 @@ function LoginPage() {
     }
   };
 
+  // const handleGoogleLogin = () => {
+  //   window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`;
+  // };
+
   return (
     <>
       <Box
@@ -98,7 +102,6 @@ function LoginPage() {
               color: '#0f172a'
             }}
           >
-            {/* Logo */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
               <img
                 src="/static/images/logo/f2.png"
@@ -107,7 +110,6 @@ function LoginPage() {
               />
             </Box>
 
-            {/* Heading */}
             <Typography variant="h5" fontWeight="bold" gutterBottom>
               Welcome Back!
             </Typography>
@@ -115,7 +117,6 @@ function LoginPage() {
               Please login to your account.
             </Typography>
 
-            {/* Form */}
             <Box component="form" noValidate>
               <TextField
                 fullWidth
@@ -169,6 +170,39 @@ function LoginPage() {
               <StyledButton fullWidth onClick={handleLogin}>
                 Login
               </StyledButton>
+
+              <Typography sx={{ mt: 2, mb: 1, color: '#475569' }}>or</Typography>
+
+              {/* Google Login Button */}
+              <Button
+                fullWidth
+                variant="outlined"
+                sx={{
+                  padding: '10px',
+                  borderRadius: '50px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  borderColor: '#ddd',
+                  backgroundColor: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  '&:hover': {
+                    backgroundColor: '#f8f9fa',
+                    borderColor: '#ccc'
+                  }
+                }}
+                // onClick={handleGoogleLogin}
+              >
+                <img
+                  src="/static/images/logo/google.svg"
+                  alt="Google"
+                  style={{ width: '24px', height: '24px' }}
+                />
+                Login with Google
+              </Button>
             </Box>
 
             {/* Sign up link */}
