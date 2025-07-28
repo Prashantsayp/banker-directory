@@ -290,9 +290,13 @@ const handleSaveChanges = async () => {
       </Stack>
 
       <Box mb={1}>
-        <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
-          <strong>Official Email:</strong> {banker.emailOfficial}
-        </Typography>
+        <Typography
+                variant="body2"
+                sx={{ color: '#374151', wordBreak: 'break-all' }}
+                gutterBottom
+              >
+                <strong>Official Email:</strong> {banker.emailOfficial}
+              </Typography>
         {banker.emailPersonal && (
           <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
             <strong>Personal Email:</strong> {banker.emailPersonal}
