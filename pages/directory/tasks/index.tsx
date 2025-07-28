@@ -558,14 +558,15 @@ const LendersTasks = () => {
       <Head>
         <title>Bankers Directory</title>
       </Head>
-      <PageTitleWrapper>
-        {role && (
-          <PageHeader
-            onCreated={() => window.location.reload()}
-            showAddButton={['admin'].includes(role)}
-          />
-        )}
-      </PageTitleWrapper>
+    <PageTitleWrapper>
+  {role && (
+    <PageHeader
+      onCreated={() => window.location.reload()}
+      showAddButton={!!role} 
+    />
+  )}
+</PageTitleWrapper>
+
       <Container maxWidth="lg">
         <TabsContainerWrapper>
           <Tabs
