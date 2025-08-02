@@ -60,7 +60,7 @@ const router = useRouter();
 
 console.log(loading);
   useEffect(() => {
-  console.log('Total bankers fetched::', bankers.length);
+  console.log('Total bankers::', bankers.length);
 }, [bankers]);
 
 
