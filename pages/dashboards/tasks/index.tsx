@@ -14,9 +14,7 @@ import {
   Fade
 } from '@mui/material';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
-
 import TeamOverview from '@/content/Dashboards/Tasks/TeamOverview';
-
 import PeopleIcon from '@mui/icons-material/People';
 
 const TabsContainerWrapper = styled(Box)(({ theme }) => `
@@ -52,9 +50,15 @@ const TabsContainerWrapper = styled(Box)(({ theme }) => `
 
 const SectionCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(3),
-  background: theme.palette.background.paper,
-  boxShadow: theme.shadows[1],
-  borderRadius: theme.shape.borderRadius
+  background: '#ffffff',
+  boxShadow: theme.shadows[3],
+  borderRadius: theme.spacing(2)
+}));
+
+const BackgroundBox = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)',
+  paddingBottom: theme.spacing(4)
 }));
 
 function DashboardTasks() {
@@ -85,45 +89,45 @@ function DashboardTasks() {
         <PageHeader onCreated={() => {}} />
       </PageTitleWrapper>
 
-      <Container maxWidth="lg">
-        <TabsContainerWrapper>
-          <Tabs
-            onChange={handleTabsChange}
-            value={currentTab}
-            variant="scrollable"
-            scrollButtons="auto"
-            textColor="primary"
-            indicatorColor="primary"
-          >
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.value}
-                value={tab.value}
-                label={
-                  <Box display="flex" alignItems="center">
-                    {tab.icon}
-                    {tab.label}
-                  </Box>
-                }
-              />
-            ))}
-          </Tabs>
-        </TabsContainerWrapper>
+      <BackgroundBox>
+        <Container maxWidth="lg">
+          <TabsContainerWrapper>
+            <Tabs
+              onChange={handleTabsChange}
+              value={currentTab}
+              variant="scrollable"
+              scrollButtons="auto"
+              textColor="primary"
+              indicatorColor="primary"
+            >
+              {tabs.map((tab) => (
+                <Tab
+                  key={tab.value}
+                  value={tab.value}
+                  label={
+                    <Box display="flex" alignItems="center">
+                      {tab.icon}
+                      {tab.label}
+                    </Box>
+                  }
+                />
+              ))}
+            </Tabs>
+          </TabsContainerWrapper>
 
-        <Fade in timeout={400}>
-          <SectionCard>
-            <Grid container spacing={3}>
-              {currentTab === 'bankers' && (
-                <>
+          <Fade in timeout={400}>
+            <SectionCard>
+              <Grid container spacing={3}>
+                {currentTab === 'bankers' && (
                   <Grid item xs={12}>
                     <TeamOverview />
                   </Grid>
-                </>
-              )}
-            </Grid>
-          </SectionCard>
-        </Fade>
-      </Container>
+                )}
+              </Grid>
+            </SectionCard>
+          </Fade>
+        </Container>
+      </BackgroundBox>
 
       <Footer />
     </>
