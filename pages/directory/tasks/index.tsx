@@ -30,8 +30,8 @@ import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
 import SearchTextField from '../../../pages/components/searchTextFied';
-import FullScreenLoader from '../../components/FullScreenLoader';
 import { useRouter } from 'next/router';
+import useDebounce from 'hooks/useDebounce';
 
 
 interface Banker {
@@ -58,9 +58,9 @@ const BankerOverview = ({ role }: { role: string | null }) => {
  const [loading, setLoading] = useState(false);
 const router = useRouter();
 
-
+console.log(loading);
   useEffect(() => {
-  console.log('Total bankers fetched::', bankers.length);
+  console.log('Total bankers::', bankers.length);
 }, [bankers]);
 
 
@@ -73,18 +73,22 @@ const router = useRouter();
       })
       .catch((err) => console.error('❌ Error:', err));
   }, []);
+const debouncedLocation = useDebounce(searchLocation, 50);
+const debouncedBanker = useDebounce(searchBanker, 50);
+const debouncedAssociated = useDebounce(searchAssociatedWith, 50);
+const debouncedEmail = useDebounce(searchEmailOfficial, 50);
+
 
 
 useEffect(() => {
   const fetchFiltered = async () => {
-   
     setLoading(true);
     try {
       const params: any = {};
-      if (searchLocation.trim()) params.location = searchLocation.trim();
-      if (searchBanker.trim()) params.bankerName = searchBanker.trim();
-      if (searchAssociatedWith.trim()) params.associatedWith = searchAssociatedWith.trim();
-      if (searchEmailOfficial.trim()) params.emailOfficial = searchEmailOfficial.trim();
+      if (debouncedLocation.trim()) params.location = debouncedLocation.trim();
+      if (debouncedBanker.trim()) params.bankerName = debouncedBanker.trim();
+      if (debouncedAssociated.trim()) params.associatedWith = debouncedAssociated.trim();
+      if (debouncedEmail.trim()) params.emailOfficial = debouncedEmail.trim();
 
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
@@ -98,10 +102,8 @@ useEffect(() => {
     }
   };
 
-    fetchFiltered();
- 
-}, [searchLocation, searchBanker, searchAssociatedWith, searchEmailOfficial]);
-
+  fetchFiltered();
+}, [debouncedLocation, debouncedBanker, debouncedAssociated, debouncedEmail]);
 
 const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
   if (type === 'location') setSearchLocation('');
@@ -516,7 +518,6 @@ const handleSaveChanges = async () => {
     </Button>
   </DialogActions>
 </Dialog>
-<FullScreenLoader open={loading} />
 
 
     </Grid>

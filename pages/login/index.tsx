@@ -18,51 +18,52 @@ import { SnackbarCloseReason } from '@mui/material';
 
 const StyledButton = styled(Button)(({ theme }) => ({
   padding: `${theme.spacing(1.5)} ${theme.spacing(4)}`,
-  borderRadius: 50,
+  borderRadius: 8,
   fontWeight: 600,
   fontSize: '1rem',
   textTransform: 'none',
-  backgroundColor: '#4f46e5',
+  background: 'linear-gradient(to right, #3b82f6, #6366f1)',
   color: '#fff',
-  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
-  transition: 'all 0.3s ease',
+  boxShadow: '0px 8px 16px rgba(99, 102, 241, 0.2)',
   '&:hover': {
-    backgroundColor: '#4338ca',
-    boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.15)'
+    background: 'linear-gradient(to right, #2563eb, #4f46e5)',
+    boxShadow: '0px 12px 20px rgba(79, 70, 229, 0.25)'
   }
 }));
 
 function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-
   const router = useRouter();
 
   const handleTogglePassword = () => setShowPassword(!showPassword);
-
   const handleSnackbarClose = (_: unknown, reason?: SnackbarCloseReason) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
   };
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setSnackbarMessage('Email and password are required.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-        { email: username, password }
+        { email, password }
       );
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
-
       setSnackbarMessage('Login successful!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-
       setTimeout(() => {
         router.push('/directory/tasks');
       }, 1200);
@@ -75,181 +76,122 @@ function LoginPage() {
     }
   };
 
-  // const handleGoogleLogin = () => {
-  //   window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`;
-  // };
-
   return (
-    <>
-      <Box
-        sx={{
-          background: 'linear-gradient(to right, #a8cff8 0%, #cde7f9 30%, #f9fcff 100%)',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 2
-        }}
-      >
-        <Container maxWidth="sm">
-          <Box
-            sx={{
-              textAlign: 'center',
-              backgroundColor: '#ffffff',
-              borderRadius: 4,
-              padding: 4,
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1)',
-              color: '#0f172a'
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <img
-                src="/static/images/logo/f2.png"
-                alt="F2 Fintech Logo"
-                style={{ height: '90px', width: 'auto' }}
-              />
-            </Box>
-
-            <Typography variant="h5" fontWeight="bold" gutterBottom>
-              Welcome Back!
-            </Typography>
-            <Typography sx={{ color: '#475569', fontSize: '1rem', mb: 3 }}>
-              Please login to your account.
-            </Typography>
-
-            <Box component="form" noValidate>
-              <TextField
-                fullWidth
-                label="Username"
-                variant="outlined"
-                margin="normal"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                sx={{
-                  '& .MuiInputBase-root': {
-                    backgroundColor: '#f1f5f9',
-                    color: '#0f172a',
-                    borderRadius: '12px'
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#475569'
-                  }
-                }}
-                required
-              />
-              <TextField
-                fullWidth
-                label="Password"
-                variant="outlined"
-                margin="normal"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                sx={{
-                  '& .MuiInputBase-root': {
-                    backgroundColor: '#f1f5f9',
-                    color: '#0f172a',
-                    borderRadius: '12px'
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#475569'
-                  }
-                }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleTogglePassword} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-                required
-              />
-
-              <StyledButton fullWidth onClick={handleLogin}>
-                Login
-              </StyledButton>
-
-              <Typography sx={{ mt: 2, mb: 1, color: '#475569' }}>or</Typography>
-
-              {/* Google Login Button */}
-              <Button
-                fullWidth
-                variant="outlined"
-                sx={{
-                  padding: '10px',
-                  borderRadius: '50px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  borderColor: '#ddd',
-                  backgroundColor: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  '&:hover': {
-                    backgroundColor: '#f8f9fa',
-                    borderColor: '#ccc'
-                  }
-                }}
-                // onClick={handleGoogleLogin}
-              >
-                <img
-                  src="/static/images/logo/google.svg"
-                  alt="Google"
-                  style={{ width: '24px', height: '24px' }}
-                />
-                Login with Google
-              </Button>
-            </Box>
-
-            {/* Sign up link */}
-            <Typography sx={{ color: '#475569', mt: 2 }}>
-              Don’t have an account?{' '}
-              <Link href="/signup" passHref>
-                <Typography
-                  component="a"
-                  sx={{
-                    color: '#1a73e8',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Sign up
-                </Typography>
-              </Link>
-            </Typography>
+    <Box
+      sx={{
+        background: 'linear-gradient(to bottom right, #f0f4ff, #ffffff)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 3
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box
+          sx={{
+            backgroundColor: '#ffffff',
+            borderRadius: 4,
+            padding: 5,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            textAlign: 'center'
+          }}
+        >
+          {/* Logo Section */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <img
+              src="/static/images/logo/f2.png"
+              alt="F2 Fintech Logo"
+              style={{ height: 70, objectFit: 'contain' }}
+            />
           </Box>
-        </Container>
-      </Box>
 
-      {/* Footer */}
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          width: '100%',
-          textAlign: 'center',
-          backgroundColor: '#f1f5f9',
-          padding: 2,
-          color: '#475569',
-          fontSize: '0.875rem'
-        }}
-      >
-        © 2025 - F2 Fintech Pvt. Ltd.
-      </Box>
+           <Typography variant="h5" sx={{ color: "#2f2c6f" }} fontWeight={700} gutterBottom>
+            Sign In to Your Account
+          </Typography> 
 
-      {/* Snackbar */}
+          <TextField
+            fullWidth
+            label="Email"
+            variant="outlined"
+            margin="normal"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            sx={{
+              '& .MuiInputBase-root': {
+                backgroundColor: '#f9fafb',
+                color: '#2f2c6f',
+                borderRadius: 4,
+                border: '1px solid #e2e8f0'
+              },
+              '& .MuiInputLabel-root': {
+                color: '#6b7280'
+              }
+            }}
+            required
+          />
+
+          <TextField
+            fullWidth
+            label="Password"
+            variant="outlined"
+            margin="normal"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{
+              '& .MuiInputBase-root': {
+                backgroundColor: '#f9fafb',
+                color: '#2f2c6f',
+                borderRadius: 4,
+                border: '1px solid #e2e8f0'
+              },
+              '& .MuiInputLabel-root': {
+                color: '#6b7280'
+              }
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleTogglePassword} edge="end">
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+            required
+          />
+
+          <StyledButton fullWidth onClick={handleLogin} sx={{ mt: 3 }}>
+            Login
+          </StyledButton>
+
+          <Typography sx={{ mt: 3, color: '#6b7280' }}>
+            Don’t have an account?{' '}
+            <Link href="/signup" passHref>
+              <Typography
+                component="a"
+                sx={{
+                  color: '#3b82f6',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' }
+                }}
+              >
+                Sign up
+              </Typography>
+            </Link>
+          </Typography>
+        </Box>
+      </Container>
+
       <CustomSnackbar
         open={snackbarOpen}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
         severity={snackbarSeverity}
       />
-    </>
+    </Box>
   );
 }
 

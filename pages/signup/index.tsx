@@ -7,7 +7,7 @@ import {
   IconButton,
   InputAdornment,
   styled,
-  MenuItem
+ 
 } from '@mui/material';
 import { useState } from 'react';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
@@ -167,35 +167,7 @@ function SignupPage() {
               required
             />
 
-            <TextField
-              fullWidth
-              label="Role"
-              name="role"
-              select
-              variant="outlined"
-              margin="normal"
-              value={formData.role}
-              onChange={handleChange}
-              sx={{
-                '& .MuiInputBase-root': {
-                  backgroundColor: '#f1f5f9',
-                  color: '#0f172a',
-                  borderRadius: '12px'
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#475569'
-                }
-              }}
-              required
-            >
-              <MenuItem value="user">User</MenuItem>
-              {/* <MenuItem value="lender">Lender</MenuItem>
-              <MenuItem value="banker">Banker</MenuItem>
-              <MenuItem value="channel partner">Channel Partner</MenuItem>
-              <MenuItem value="dsa">DSA</MenuItem>
-              <MenuItem value="dma">DMA</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem> */}
-            </TextField>
+          
 
             <TextField
               fullWidth

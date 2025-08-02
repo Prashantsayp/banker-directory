@@ -11,11 +11,8 @@ import {
 } from '@mui/material';
 import NextLink from 'next/link';
 import { SidebarContext } from 'src/contexts/SidebarContext';
-
-import DesignServicesTwoToneIcon from '@mui/icons-material/DesignServicesTwoTone';
 import BrightnessLowTwoToneIcon from '@mui/icons-material/BrightnessLowTwoTone';
 import MmsTwoToneIcon from '@mui/icons-material/MmsTwoTone';
-// import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
 import PersonOutlineTwoToneIcon from '@mui/icons-material/PersonOutlineTwoTone';
 
 const MenuWrapper = styled(Box)(
@@ -102,7 +99,7 @@ function SidebarMenu() {
   return (
     <>
       <MenuWrapper>
-        <List component="div">
+        {/* <List component="div">
           <SubMenuWrapper>
             <List component="div">
               <ListItem component="div">
@@ -120,7 +117,7 @@ function SidebarMenu() {
               </ListItem>
             </List>
           </SubMenuWrapper>
-        </List>
+        </List> */}
 
         <List
           component="div"
@@ -185,6 +182,23 @@ function SidebarMenu() {
                       startIcon={<PersonOutlineTwoToneIcon />}
                     >
                       Users
+                    </Button>
+                  </NextLink>
+                </ListItem>
+              )}
+
+              
+              {userRole === 'admin' && (
+                <ListItem component="div">
+                  <NextLink href="/directoryReview/tasks" passHref>
+                    <Button
+                      className={currentRoute === '/directoryReview/tasks' ? 'active' : ''}
+                      disableRipple
+                      component="a"
+                      onClick={closeSidebar}
+                      startIcon={<PersonOutlineTwoToneIcon />}
+                    >
+                      Directory Review
                     </Button>
                   </NextLink>
                 </ListItem>
