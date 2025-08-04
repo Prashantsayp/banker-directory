@@ -1,3 +1,5 @@
+// pages/banker-directory/index.tsx
+
 import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -18,21 +20,15 @@ import {
   TextField,
   Container,
   Card,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Autocomplete 
+  MenuItem,
+  Pagination
 } from '@mui/material';
 import axios from 'axios';
 import PageTitleWrapper from '@/components/PageTitleWrapper';
-import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
 import SearchTextField from '../../../pages/components/searchTextFied';
-import { useRouter } from 'next/router';
 import useDebounce from 'hooks/useDebounce';
-
+import BankerEditDialog from '../../components/BankerEditDialog';
 
 interface Banker {
   _id: string;
@@ -46,171 +42,118 @@ interface Banker {
 }
 
 const BankerOverview = ({ role }: { role: string | null }) => {
-  const [bankers, setBankers] = useState<Banker[]>([]);
   const [filteredBankers, setFilteredBankers] = useState<Banker[]>([]);
   const [searchLocation, setSearchLocation] = useState('');
   const [searchBanker, setSearchBanker] = useState('');
   const [searchAssociatedWith, setSearchAssociatedWith] = useState('');
   const [searchEmailOfficial, setSearchEmailOfficial] = useState('');
-
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editBanker, setEditBanker] = useState<Banker | null>(null);
- const [loading, setLoading] = useState(false);
-const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(9);
+  const [totalCount, setTotalCount] = useState(0);
 
-console.log(loading);
+  const debouncedLocation = useDebounce(searchLocation, 500);
+  const debouncedBanker = useDebounce(searchBanker, 500);
+  const debouncedAssociated = useDebounce(searchAssociatedWith, 500);
+  const debouncedEmail = useDebounce(searchEmailOfficial, 500);
+
   useEffect(() => {
-  console.log('Total bankers::', bankers.length);
-}, [bankers]);
-
+    setPage(1);
+  }, [debouncedLocation, debouncedBanker, debouncedAssociated, debouncedEmail]);
 
   useEffect(() => {
-    axios
-      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/get-directories`)
-      .then((res) => {
-        setBankers(res.data);
-        setFilteredBankers(res.data);
-      })
-      .catch((err) => console.error('❌ Error:', err));
-  }, []);
-const debouncedLocation = useDebounce(searchLocation, 50);
-const debouncedBanker = useDebounce(searchBanker, 50);
-const debouncedAssociated = useDebounce(searchAssociatedWith, 50);
-const debouncedEmail = useDebounce(searchEmailOfficial, 50);
+    const fetchFiltered = async () => {
+      setLoading(true);
+      try {
+        const params: any = { page, limit };
+        if (debouncedLocation.trim()) params.location = debouncedLocation.trim();
+        if (debouncedBanker.trim()) params.bankerName = debouncedBanker.trim();
+        if (debouncedAssociated.trim()) params.associatedWith = debouncedAssociated.trim();
+        if (debouncedEmail.trim()) params.emailOfficial = debouncedEmail.trim();
 
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`, { params });
+        const { data, totalCount } = res.data;
+        setFilteredBankers(Array.isArray(data) ? data : []);
+        setTotalCount(typeof totalCount === 'number' ? totalCount : 0);
+      } catch (err) {
+        console.error('Search error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchFiltered();
+  }, [debouncedLocation, debouncedBanker, debouncedAssociated, debouncedEmail, page, limit]);
 
-useEffect(() => {
-  const fetchFiltered = async () => {
-    setLoading(true);
-    try {
-      const params: any = {};
-      if (debouncedLocation.trim()) params.location = debouncedLocation.trim();
-      if (debouncedBanker.trim()) params.bankerName = debouncedBanker.trim();
-      if (debouncedAssociated.trim()) params.associatedWith = debouncedAssociated.trim();
-      if (debouncedEmail.trim()) params.emailOfficial = debouncedEmail.trim();
-
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
-        { params }
-      );
-      setFilteredBankers(res.data);
-    } catch (err) {
-      console.error('Search error:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
+    if (type === 'location') setSearchLocation('');
+    if (type === 'banker') setSearchBanker('');
+    if (type === 'associated') setSearchAssociatedWith('');
+    if (type === 'emailOfficial') setSearchEmailOfficial('');
   };
-
-  fetchFiltered();
-}, [debouncedLocation, debouncedBanker, debouncedAssociated, debouncedEmail]);
-
-const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
-  if (type === 'location') setSearchLocation('');
-  if (type === 'banker') setSearchBanker('');
-  if (type === 'associated') setSearchAssociatedWith('');
-  if (type === 'emailOfficial') setSearchEmailOfficial('');
-};
 
   const handleEdit = (banker: Banker) => {
     setEditBanker(banker);
     setEditModalOpen(true);
   };
 
- const handleDelete = async (id: string) => {
-  if (confirm('Are you sure you want to delete this banker?')) {
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this banker?')) {
+      try {
+        setLoading(true);
+        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
+        setFilteredBankers((prev) => prev.filter((b) => b._id !== id));
+        setTotalCount((prev) => prev - 1);
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Delete failed!');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    if (!editBanker) return;
+    const { _id, ...updatePayload } = editBanker;
     try {
       setLoading(true);
-      await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
-      router.reload(); // 👈 Refresh the page
+      await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`, updatePayload);
+      setFilteredBankers((prev) => prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b)));
+      setEditModalOpen(false);
     } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Delete failed!');
+      console.error('Update failed:', err);
+      alert('Update failed!');
     } finally {
       setLoading(false);
     }
-  }
-};
-
-const handleSaveChanges = async () => {
-  if (!editBanker) return;
-
-  const { _id, ...updatePayload } = editBanker;
-
-  try {
-    setLoading(true);
-    await axios.put(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`,
-      updatePayload
-    );
-
-    // Update UI
-    setBankers((prev) =>
-      prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b))
-    );
-    setFilteredBankers((prev) =>
-      prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b))
-    );
-
-    setEditModalOpen(false);
-  } catch (err) {
-    console.error('Update failed:', err);
-    alert('Update failed!');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
+  };
 
   return (
-    
     <Grid container spacing={4} padding={2}>
       <Grid item xs={12}>
-      <Box display="flex" gap={1} flexWrap="wrap">
-          <SearchTextField
-            label="Search by Location"
-            value={searchLocation}
-            onChange={setSearchLocation}
-            onClear={() => handleClearSearch('location')}
-            icon="📍"
-          />
-          <SearchTextField
-            label="Search by Associated With"
-            value={searchAssociatedWith}
-            onChange={setSearchAssociatedWith}
-            onClear={() => handleClearSearch('associated')}
-            icon="🏦"
-          />
-          <SearchTextField
-            label="Search by Official Email"
-            value={searchEmailOfficial}
-            onChange={setSearchEmailOfficial}
-            onClear={() => handleClearSearch('emailOfficial')}
-            icon="📧"
-          />
-          <SearchTextField
-            label="Search by Banker"
-            value={searchBanker}
-            onChange={setSearchBanker}
-            onClear={() => handleClearSearch('banker')}
-            icon="👤"
-            maxWidth={250}
-          />
+        <Box display="flex" gap={1} flexWrap="wrap">
+          <SearchTextField label="Search by Location" value={searchLocation} onChange={setSearchLocation} onClear={() => handleClearSearch('location')} icon="📍" />
+          <SearchTextField label="Search by Associated With" value={searchAssociatedWith} onChange={setSearchAssociatedWith} onClear={() => handleClearSearch('associated')} icon="🏦" />
+          <SearchTextField label="Search by Official Email" value={searchEmailOfficial} onChange={setSearchEmailOfficial} onClear={() => handleClearSearch('emailOfficial')} icon="📧" />
+          <SearchTextField label="Search by Banker" value={searchBanker} onChange={setSearchBanker} onClear={() => handleClearSearch('banker')} icon="👤" maxWidth={250} />
         </Box>
-
       </Grid>
 
- {filteredBankers.map((banker) => (
-  <Grid item xs={12} sm={6} md={4} key={banker._id}>
-    <Paper
+      {filteredBankers.map((banker) => (
+        <Grid item xs={12} sm={6} md={4} key={banker._id}>
+             <Paper
       elevation={2}
       sx={{
         p: 3,
         borderRadius: 3,
         height: '100%',
         background: '#ffffff',
+           display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
         border: '1px solid #e5e7eb',
         transition: 'all 0.3s ease',
         '&:hover': {
@@ -219,7 +162,7 @@ const handleSaveChanges = async () => {
         }
       }}
     >
-      <Box display="flex" alignItems="center" mb={2}>
+<Box display="flex" alignItems="center" mb={2}>
         <Avatar sx={{ bgcolor: '#2563EB', mr: 2 }}>
       {banker.bankerName?.charAt(0)?.toUpperCase() || 'B'}
 
@@ -266,15 +209,14 @@ const handleSaveChanges = async () => {
           />
         ))}
       </Stack>
-
-      <Typography
+              <Typography
         variant="subtitle2"
         sx={{ color: '#2E3A59', fontWeight: 500 }}
         gutterBottom
       >
         Products:
       </Typography>
-      <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
+            <Stack direction="row" flexWrap="wrap" spacing={1} mb={2}>
         {(banker.product || []).map((prod, index) => (
           <Chip
             key={index}
@@ -289,8 +231,7 @@ const handleSaveChanges = async () => {
             }}
           />
         ))}
-      </Stack>
-
+            </Stack>
       <Box mb={1}>
         <Typography
                 variant="body2"
@@ -299,17 +240,16 @@ const handleSaveChanges = async () => {
               >
                 <strong>Official Email:</strong> {banker.emailOfficial}
               </Typography>
-        {banker.emailPersonal && (
+         {banker.emailPersonal && (
           <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
             <strong>Personal Email:</strong> {banker.emailPersonal}
           </Typography>
         )}
-        <Typography variant="body2" sx={{ color: '#374151' }}>
+               <Typography variant="body2" sx={{ color: '#374151' }}>
           <strong>Contact:</strong> {banker.contact}
         </Typography>
       </Box>
-
-      {role === 'admin' && (
+        {role === 'admin' && (
         <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
           <Chip
             label="Edit"
@@ -330,6 +270,7 @@ const handleSaveChanges = async () => {
             onClick={() => handleDelete(banker._id)}
             clickable
             sx={{
+              
               color: '#B91C1C',
               borderColor: '#FCA5A5',
               backgroundColor: '#FEF2F2',
@@ -344,192 +285,33 @@ const handleSaveChanges = async () => {
     </Paper>
   </Grid>
 ))}
-{filteredBankers.length === 0 && (
-  <Grid item xs={12}>
-    <Typography align="center" color="text.secondary">
-      No bankers match your search criteria.
-    </Typography>
-  </Grid>
-)}
 
-<Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
-  {/* Dialog Header with white background and primary color text */}
-  <DialogTitle sx={{ color: '#fff', bgcolor: 'primary.main' }}>
-    Edit Banker
-  </DialogTitle>
+      {filteredBankers.length === 0 && (
+        <Grid item xs={12}>
+          <Typography align="center" color="text.secondary">No bankers match your search criteria.</Typography>
+        </Grid>
+      )}
 
-  {/* Dialog Content with white background and dark text field theme */}
-<DialogContent sx={{ mt: 0, bgcolor: '#fff' }}>
-  {editBanker && (
-    <Stack spacing={2} sx={{ mt: 1 }}>
-      {/* Text Fields */}
-      {[ 
-        { label: 'Banker Name', key: 'bankerName' },
-        { label: 'Associated With', key: 'associatedWith' },
-        { label: 'Official Email', key: 'emailOfficial' },
-        { label: 'Personal Email', key: 'emailPersonal' },
-        { label: 'Contact', key: 'contact' }
-      ].map(({ label, key }) => (
-        <TextField
-          key={key}
-          label={label}
-          value={editBanker?.[key] ?? ''}
-          onChange={(e) =>
-            setEditBanker({ ...editBanker, [key]: e.target.value })
-          }
-          fullWidth
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              color: '#1F2937',
-              backgroundColor: '#F9FAFB',
-              '& fieldset': { borderColor: '#60A5FA' },
-              '&:hover fieldset': { borderColor: '#3B82F6' },
-              '&.Mui-focused fieldset': { borderColor: '#2563EB' }
-            },
-            '& .MuiInputLabel-root': { color: '#2563EB' },
-            '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
-          }}
-        />
-      ))}
-<Autocomplete<string, true, true, true>
-  multiple
-  freeSolo
-  options={[]} // Optional: suggestions like ['PL', 'BL']
-  value={editBanker?.product || []}
-  onChange={(_event, newValue) => {
-    if (!editBanker) return;
+      {totalCount > 0 && (
+        <Grid item xs={12} mt={2} display="flex" justifyContent="space-between" alignItems="center">
+          <Pagination count={Math.ceil(totalCount / limit)} page={page} onChange={(_, value) => setPage(value)} color="primary" />
+          <TextField select label="Rows per page" value={limit} onChange={(e) => { setLimit(parseInt(e.target.value)); setPage(1); }} size="small" sx={{ width: 150 }}>
+            {[6, 9, 12, 15, 20].map((val) => (<MenuItem key={val} value={val}>{val}</MenuItem>))}
+          </TextField>
+        </Grid>
+      )}
 
-    setEditBanker({
-      ...editBanker,
-      product: (newValue || [])
-        .map((val) => (typeof val === 'string' ? val.trim() : ''))
-        .filter(Boolean)
-    });
-  }}
-  renderTags={(value, getTagProps) =>
-    value.map((option, index) => (
-      <Chip
-        key={option + index}
-        label={option}
-        {...getTagProps({ index })}
-        sx={{
-          backgroundColor: '#3B82F6',
-          color: '#FFFFFF',
-          borderRadius: '8px',
-          fontWeight: 500,
-          fontSize: '0.85rem',
-          '& .MuiChip-deleteIcon': {
-            color: '#FFFFFF',
-            '&:hover': { color: '#E0E7FF' }
-          }
-        }}
+      <BankerEditDialog
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        banker={editBanker}
+        setBanker={(data) => setEditBanker(data)}
+        onSave={handleSaveChanges}
+        loading={loading}
       />
-    ))
-  }
-  renderInput={(params) => (
-    <TextField
-      {...params}
-      label="Products"
-      fullWidth
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          color: '#1F2937',
-          backgroundColor: '#F9FAFB',
-          '& fieldset': { borderColor: '#60A5FA' },
-          '&:hover fieldset': { borderColor: '#3B82F6' },
-          '&.Mui-focused fieldset': { borderColor: '#2563EB' }
-        },
-        '& .MuiInputLabel-root': { color: '#2563EB' },
-        '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
-      }}
-    />
-  )}
-/>
-
-
-
-     <Autocomplete<string, true, true, true>
-  multiple
-  freeSolo
-  options={[]} // Add suggestions if needed
-  value={editBanker?.locationCategories || []}
-  onChange={(_event, newValue) =>
-    setEditBanker({
-      ...editBanker,
-      locationCategories: newValue
-        .map((val) => (typeof val === 'string' ? val.trim() : ''))
-        .filter(Boolean)
-    })
-  }
-  renderTags={(value: readonly string[], getTagProps) =>
-    value.map((option: string, index: number) => (
-    
-       <Chip
-      key={option + index}
-        label={option}
-        {...getTagProps({ index })}
-        sx={{
-          backgroundColor: '#3B82F6',
-          color: '#FFFFFF',
-          borderRadius: '8px',
-          fontWeight: 500,
-          fontSize: '0.85rem',
-          '& .MuiChip-deleteIcon': {
-            color: '#FFFFFF',
-            '&:hover': {
-              color: '#E0E7FF'
-            }
-          }
-        }}
-      />
-    ))
-  }
-  renderInput={(params) => (
-    <TextField
-      {...params}
-      label="Location Categories"
-      fullWidth
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          color: '#1F2937',
-          backgroundColor: '#F9FAFB',
-          '& fieldset': { borderColor: '#60A5FA' },
-          '&:hover fieldset': { borderColor: '#3B82F6' },
-          '&.Mui-focused fieldset': { borderColor: '#2563EB' }
-        },
-        '& .MuiInputLabel-root': { color: '#2563EB' },
-        '& .MuiInputLabel-root.Mui-focused': { color: '#2563EB' }
-      }}
-    />
-  )}
-/>
-
-    </Stack>
-  )}
-</DialogContent>
-
-  {/* Dialog Footer with white background */}
-  <DialogActions sx={{ bgcolor: '#fff', px: 3, py: 2 }}>
-    <Button onClick={() => setEditModalOpen(false)} color="inherit" sx={{ color: 'primary.main' }}>
-      Cancel
-    </Button>
-    <Button variant="contained" onClick={handleSaveChanges} color="primary">
-      Save Changes
-    </Button>
-  </DialogActions>
-</Dialog>
-
-
     </Grid>
-    
   );
 };
-
-const TabsContainerWrapper = styled(Box)(({ theme }) => ({
-  padding: `0 ${theme.spacing(2)}`,
-  position: 'relative',
-  bottom: '-1px'
-}));
 
 const LendersTasks = () => {
   const [currentTab, setCurrentTab] = useState<string>('overview');
@@ -563,20 +345,17 @@ const LendersTasks = () => {
       <Head>
         <title>Bankers Directory</title>
       </Head>
-    <PageTitleWrapper>
-  {role && (
-    <PageHeader
-      onCreated={() => window.location.reload()}
-      showAddButton={!!role} 
-    />
-  )}
-</PageTitleWrapper>
+      <PageTitleWrapper>
+        {role && (
+          <PageHeader onCreated={() => window.location.reload()} showAddButton={!!role} />
+        )}
+      </PageTitleWrapper>
 
       <Container maxWidth="lg">
-        <TabsContainerWrapper>
+        <Box borderBottom={1} borderColor="divider">
           <Tabs
-            onChange={handleTabsChange}
             value={currentTab}
+            onChange={handleTabsChange}
             variant="scrollable"
             scrollButtons="auto"
             textColor="primary"
@@ -586,7 +365,7 @@ const LendersTasks = () => {
               <Tab key={tab.value} label={tab.label} value={tab.value} />
             ))}
           </Tabs>
-        </TabsContainerWrapper>
+        </Box>
 
         <Card variant="outlined" sx={{ mt: 2 }}>
           <Grid container>
