@@ -267,8 +267,7 @@ function SignupPage() {
         open={snackbarOpen}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
-        severity={snackbarSeverity}
-      />
+        severity={snackbarSeverity} l={undefined}      />
     </>
   );
 }

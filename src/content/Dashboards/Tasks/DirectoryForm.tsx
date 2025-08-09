@@ -134,9 +134,9 @@ const DirectoryForm = ({ onSuccess }: { onSuccess: () => void }) => {
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 900, margin: '0 auto', backgroundColor: '#fff', borderRadius: 3 }}>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: '#222' }}>
-        Create Directory Entry
+        Add banker Entry
       </Typography>
-      <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ mb: 2}} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 

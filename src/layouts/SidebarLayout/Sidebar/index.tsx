@@ -5,27 +5,24 @@ import { SidebarContext } from 'src/contexts/SidebarContext';
 import {
   Box,
   Drawer,
-  alpha,
   styled,
   Divider,
-  useTheme,
-  lighten,
-  darken
+  useTheme
 } from '@mui/material';
 
 import SidebarMenu from './SidebarMenu';
 
-const SidebarWrapper = styled(Box)(
-  ({ theme }) => `
-    width: ${theme.sidebar.width};
-    min-width: ${theme.sidebar.width};
-    color: ${theme.colors.alpha.trueWhite[70]};
-    position: relative;
-    z-index: 7;
-    height: 100%;
-    padding-bottom: 68px;
-`
-);
+const SidebarWrapper = styled(Box)(({ theme }) => ({
+  width: theme.sidebar.width,
+  minWidth: theme.sidebar.width,
+  color: theme.palette.text.primary,
+  position: 'relative',
+  zIndex: 7,
+  height: '100%',
+  backgroundColor: '#ffffff', // ✅ Sidebar background white
+  borderRight: `1px solid #e5e7eb`, // ✅ Light divider
+  paddingBottom: 68
+}));
 
 function Sidebar() {
   const { sidebarToggle, toggleSidebar } = useContext(SidebarContext);
@@ -34,6 +31,7 @@ function Sidebar() {
 
   return (
     <>
+      {/* Desktop Sidebar */}
       <SidebarWrapper
         sx={{
           display: {
@@ -43,73 +41,47 @@ function Sidebar() {
           position: 'fixed',
           left: 0,
           top: 0,
-          background:
-            theme.palette.mode === 'dark'
-              ? alpha(lighten(theme.header.background, 0.1), 0.5)
-              : darken(theme.colors.alpha.black[100], 0.5),
-          boxShadow:
-            theme.palette.mode === 'dark' ? theme.sidebar.boxShadow : 'none'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // ✅ Soft shadow
         }}
       >
         <Scrollbar>
-       <Box mt={0} display="flex" justifyContent="center">
-<Box sx={{ width: 80 }}>
-  <a href="https://f2fintechbanker-directory.netlify.app/">
-    <img
-      src="/static/images/logo/f2fin.png"
-      alt="F2Fin Logo"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-    />
-  </a>
-</Box>
+          {/* Logo */}
+          <Box mt={2} display="flex" justifyContent="center">
+            <Box sx={{ width: 90 }}>
+              <a href="/">
+                <img
+                  src="/static/images/logo/f2.png"
+                  alt="F2Fin Logo"
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              </a>
+            </Box>
+          </Box>
 
-</Box>
+          {/* Divider */}
+          <Divider sx={{ mt: 2, mx: 2, background: '#e5e7eb' }} />
 
-          <Divider
-            sx={{
-              mt: theme.spacing(3),
-              mx: theme.spacing(2),
-              background: theme.colors.alpha.trueWhite[10]
-            }}
-          />
+          {/* Menu */}
           <SidebarMenu />
         </Scrollbar>
-        <Divider
-          sx={{
-            background: theme.colors.alpha.trueWhite[10]
-          }}
-        />
-        <Box p={2}>
-          {/* Optional button or additional footer content */}
-        </Box>
+
+        {/* Bottom Divider */}
+        <Divider sx={{ background: '#e5e7eb' }} />
       </SidebarWrapper>
 
+      {/* Mobile Sidebar Drawer */}
       <Drawer
-        sx={{
-          boxShadow: `${theme.sidebar.boxShadow}`
-        }}
+        sx={{ boxShadow: theme.sidebar.boxShadow }}
         anchor={theme.direction === 'rtl' ? 'right' : 'left'}
         open={sidebarToggle}
         onClose={closeSidebar}
         variant="temporary"
         elevation={9}
       >
-        <SidebarWrapper
-          sx={{
-            background:
-              theme.palette.mode === 'dark'
-                ? theme.colors.alpha.white[100]
-                : darken(theme.colors.alpha.black[100], 0.5)
-          }}
-        >
+        <SidebarWrapper>
           <Scrollbar>
             <Box mt={3}>
-              <Box
-                mx={2}
-                sx={{
-                  width: 52
-                }}
-              >
+              <Box mx={2} sx={{ width: 52 }}>
                 <img
                   src="/static/images/logo/f2fin.png"
                   alt="F2Fin Logo"
@@ -117,13 +89,9 @@ function Sidebar() {
                 />
               </Box>
             </Box>
-            <Divider
-              sx={{
-                mt: theme.spacing(3),
-                mx: theme.spacing(2),
-                background: theme.colors.alpha.trueWhite[10]
-              }}
-            />
+
+            <Divider sx={{ mt: 3, mx: 2, background: '#e5e7eb' }} />
+
             <SidebarMenu />
           </Scrollbar>
         </SidebarWrapper>

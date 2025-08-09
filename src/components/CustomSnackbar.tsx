@@ -8,7 +8,7 @@ interface CustomSnackbarProps {
   onClose: (
     event?: React.SyntheticEvent | Event,
     reason?: SnackbarCloseReason
-  ) => void;
+  ) => void;l
   duration?: number;
 }
 

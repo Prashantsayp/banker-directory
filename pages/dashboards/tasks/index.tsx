@@ -1,139 +1,109 @@
 import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
-import { ChangeEvent, useState, useEffect } from 'react';
-import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
-import Footer from '@/components/Footer';
+import { useState, useEffect } from 'react';
 import {
-  Grid,
-  Tab,
-  Tabs,
+
   Container,
-  Card,
+
   Box,
   styled,
-  Fade
+  Button,
+ 
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton
 } from '@mui/material';
-import PageTitleWrapper from '@/components/PageTitleWrapper';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import Footer from '@/components/Footer';
 import TeamOverview from '@/content/Dashboards/Tasks/TeamOverview';
-import PeopleIcon from '@mui/icons-material/People';
+import DirectoryForm from '@/content/Dashboards/Tasks/DirectoryForm';
 
-const TabsContainerWrapper = styled(Box)(({ theme }) => `
-  padding: ${theme.spacing(0, 1)};
-  margin-bottom: ${theme.spacing(2)};
-  border-bottom: 1px solid ${theme.palette.divider};
-
-  .MuiTabs-root {
-    min-height: 40px;
-  }
-
-  .MuiTab-root {
-    font-size: ${theme.typography.pxToRem(13)};
-    padding: ${theme.spacing(1.2, 2)};
-    min-height: 40px;
-    text-transform: none;
-    gap: ${theme.spacing(1)};
-  }
-
-  .MuiTabs-indicator {
-    display: flex;
-    justify-content: center;
-
-    &::after {
-      content: '';
-      width: 30px;
-      height: 3px;
-      background-color: ${theme.palette.primary.main};
-      border-radius: 2px;
-    }
-  }
-`);
-
-const SectionCard = styled(Card)(({ theme }) => ({
-  padding: theme.spacing(3),
-  background: '#ffffff',
-  boxShadow: theme.shadows[3],
-  borderRadius: theme.spacing(2)
-}));
 
 const BackgroundBox = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)',
-  paddingBottom: theme.spacing(4)
+  background: '#f5f6fa',
+  paddingBottom: theme.spacing(4),
+  paddingTop: theme.spacing(2)
 }));
 
 function DashboardTasks() {
-  const [currentTab, setCurrentTab] = useState<string>('bankers');
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const tabs = [
-    { value: 'bankers', label: 'Overview', icon: <PeopleIcon fontSize="small" /> },
-  ];
-
-  const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
-    setCurrentTab(value);
-  };
-
+  const [openForm, setOpenForm] = useState(false);
+ 
+  useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
+
+  const handleFormSuccess = () => {
+    setOpenForm(false);
+    
+  };
 
   return (
     <>
-      <Head>
-        <title>Bankers Directory</title>
-      </Head>
+      <Head><title>Bankers Directory</title></Head>
+<BackgroundBox>
+  <Container maxWidth="lg">
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: 2
+      }}
+    >
+      {/* Empty placeholder to keep button position */}
+      <Box sx={{ flex: 1 }} />
 
-      <PageTitleWrapper>
-        <PageHeader onCreated={() => {}} />
-      </PageTitleWrapper>
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={() => setOpenForm(true)}
+        sx={{ borderRadius: 2 }}
+      >
+        Add Banker Profile
+      </Button>
+    </Box>
 
-      <BackgroundBox>
-        <Container maxWidth="lg">
-          <TabsContainerWrapper>
-            <Tabs
-              onChange={handleTabsChange}
-              value={currentTab}
-              variant="scrollable"
-              scrollButtons="auto"
-              textColor="primary"
-              indicatorColor="primary"
-            >
-              {tabs.map((tab) => (
-                <Tab
-                  key={tab.value}
-                  value={tab.value}
-                  label={
-                    <Box display="flex" alignItems="center">
-                      {tab.icon}
-                      {tab.label}
-                    </Box>
-                  }
-                />
-              ))}
-            </Tabs>
-          </TabsContainerWrapper>
-
-          <Fade in timeout={400}>
-            <SectionCard>
-              <Grid container spacing={3}>
-                {currentTab === 'bankers' && (
-                  <Grid item xs={12}>
-                    <TeamOverview />
-                  </Grid>
-                )}
-              </Grid>
-            </SectionCard>
-          </Fade>
-        </Container>
-      </BackgroundBox>
+    {/* Cards grid; refresh when form submits */}
+    <TeamOverview userRole="admin"  />
+  </Container>
+</BackgroundBox>
 
       <Footer />
+
+      {/* Modal: Add Banker Directory */}
+      <Dialog
+        open={openForm}
+        onClose={() => setOpenForm(false)}
+        maxWidth="md"
+        fullWidth
+        scroll="body"
+        PaperProps={{ sx: { borderRadius: 3, background: '#fff' } }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontWeight: 600,
+            color: 'primary.main'
+          }}
+        >
+          Add Banker Directory
+          <IconButton onClick={() => setOpenForm(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          <DirectoryForm onSuccess={handleFormSuccess} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
 DashboardTasks.getLayout = (page) => <SidebarLayout>{page}</SidebarLayout>;
-
 export default DashboardTasks;

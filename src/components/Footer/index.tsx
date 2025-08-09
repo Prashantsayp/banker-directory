@@ -15,10 +15,11 @@ function Footer() {
         alignItems="center"
         textAlign={{ xs: 'center', md: 'left' }}
         justifyContent="space-between"
+        
       >
         <Box>
-          <Typography variant="subtitle1">
-            &copy; 2025 - Bankers Directory Powred By: F2 Fintech Pvt. Ltd.
+          <Typography variant="subtitle1" sx={{color:"black"}}>
+            &copy; 2025 - Bankers Directory Powered By: F2 Fintech Pvt. Ltd.
           </Typography>
         </Box>
         <Typography

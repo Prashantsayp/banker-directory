@@ -2,80 +2,89 @@ import { useContext } from 'react';
 import { useRouter } from 'next/router';
 import {
   ListSubheader,
-  alpha,
+
   Box,
   List,
   styled,
   Button,
-  ListItem
+  ListItem,
+  Chip
 } from '@mui/material';
 import NextLink from 'next/link';
 import { SidebarContext } from 'src/contexts/SidebarContext';
-import BrightnessLowTwoToneIcon from '@mui/icons-material/BrightnessLowTwoTone';
-import MmsTwoToneIcon from '@mui/icons-material/MmsTwoTone';
-import PersonOutlineTwoToneIcon from '@mui/icons-material/PersonOutlineTwoTone';
 
-const MenuWrapper = styled(Box)(
-  ({ theme }) => `
-  .MuiList-root {
-    padding: ${theme.spacing(1)};
-    & > .MuiList-root {
-      padding: 0 ${theme.spacing(0)} ${theme.spacing(1)};
+import DashboardCustomizeTwoToneIcon from '@mui/icons-material/DashboardCustomizeTwoTone';
+import ContactPageTwoToneIcon from '@mui/icons-material/ContactPageTwoTone';
+import AccountBalanceTwoToneIcon from '@mui/icons-material/AccountBalanceTwoTone';
+import GroupTwoToneIcon from '@mui/icons-material/GroupTwoTone';
+import FactCheckTwoToneIcon from '@mui/icons-material/FactCheckTwoTone';
+
+const MenuWrapper = styled(Box)(({ theme }) => ({
+  '.MuiList-root': {
+    padding: theme.spacing(1),
+    '& > .MuiList-root': {
+      padding: `0 ${theme.spacing(0)} ${theme.spacing(1)}`
     }
+  },
+  '.MuiListSubheader-root': {
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    fontSize: theme.typography.pxToRem(14),
+    color: '#9ca3af',
+    padding: theme.spacing(0, 2.5),
+    lineHeight: 1.4
   }
+}));
 
-  .MuiListSubheader-root {
-    text-transform: uppercase;
-    font-weight: bold;
-    font-size: ${theme.typography.pxToRem(12)};
-    color: ${theme.colors.alpha.trueWhite[50]};
-    padding: ${theme.spacing(0, 2.5)};
-    line-height: 1.4;
-  }
-`
-);
+const SubMenuWrapper = styled(Box)(({ theme }) => ({
+  '.MuiList-root': {
+    '.MuiListItem-root': {
+      padding: '1px 0',
+      '.MuiButton-root': {
+        display: 'flex',
+        color: '#4b5563',
+        backgroundColor: 'transparent',
+        width: '100%',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        padding: theme.spacing(1.2, 2),
+        fontWeight: 500,
+        fontSize: theme.typography.pxToRem(15),
+        borderRadius: '10px',
+        textTransform: 'none',
 
-const SubMenuWrapper = styled(Box)(
-  ({ theme }) => `
-  .MuiList-root {
-    .MuiListItem-root {
-      padding: 1px 0;
+        '.MuiButton-startIcon': {
+          color: '#5c60f5',
+          fontSize: theme.typography.pxToRem(20),
+          marginRight: theme.spacing(1)
+        },
 
-      .MuiButton-root {
-        display: flex;
-        color: ${theme.colors.alpha.trueWhite[70]};
-        background-color: transparent;
-        width: 100%;
-        justify-content: flex-start;
-        padding: ${theme.spacing(1.2, 3)};
-
-        .MuiButton-startIcon {
-          color: ${theme.colors.alpha.trueWhite[30]};
-          font-size: ${theme.typography.pxToRem(20)};
-          margin-right: ${theme.spacing(1)};
-        }
-
-        .MuiButton-endIcon {
-          color: ${theme.colors.alpha.trueWhite[50]};
-          margin-left: auto;
-          opacity: 0.8;
-          font-size: ${theme.typography.pxToRem(20)};
-        }
-
-        &.active,
-        &:hover {
-          background-color: ${alpha(theme.colors.alpha.trueWhite[100], 0.06)};
-          color: ${theme.colors.alpha.trueWhite[100]};
-
-          .MuiButton-startIcon,
-          .MuiButton-endIcon {
-            color: ${theme.colors.alpha.trueWhite[100]};
+        '&.active, &:hover': {
+          backgroundColor: '#edeef0ff',
+          color: '#051027ff',
+          '.MuiButton-startIcon': {
+            color: '#2563EB'
           }
         }
       }
     }
   }
-`
+}));
+
+const NewBadge = () => (
+  <Chip
+    label="NEW"
+    size="small"
+    sx={{
+      bgcolor: '#dcfce7',
+      color: '#22c55e',
+      fontSize: '0.65rem',
+      fontWeight: 600,
+      ml: 1,
+      height: 20,
+      px: 1
+    }}
+  />
 );
 
 function SidebarMenu() {
@@ -83,7 +92,6 @@ function SidebarMenu() {
   const router = useRouter();
   const currentRoute = router.pathname;
 
-  // Get user role from JWT
   let userRole: string | null = null;
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -97,81 +105,58 @@ function SidebarMenu() {
   }
 
   return (
-    <>
-      <MenuWrapper>
-        {/* <List component="div">
-          <SubMenuWrapper>
-            <List component="div">
-              <ListItem component="div">
-                <NextLink href="/" passHref>
-                  <Button
-                    className={currentRoute === '/' ? 'active' : ''}
-                    disableRipple
-                    component="a"
-                    onClick={closeSidebar}
-                    startIcon={<DesignServicesTwoToneIcon />}
-                  >
-                    Overview
-                  </Button>
-                </NextLink>
-              </ListItem>
-            </List>
-          </SubMenuWrapper>
-        </List> */}
+    <MenuWrapper>
+      <List
+        component="div"
+        subheader={<ListSubheader component="div" disableSticky>Dashboards</ListSubheader>}
+      >
+        <SubMenuWrapper>
+          <List component="div">
 
-        <List
-          component="div"
-          subheader={
-            <ListSubheader component="div" disableSticky>
-              Dashboards
-            </ListSubheader>
-          }
-        >
-          <SubMenuWrapper>
-            <List component="div">
-              <ListItem component="div">
-                <NextLink href="/dashboards" passHref>
-                  <Button
-                    className={currentRoute === '/dashboards/tasks' ? 'active' : ''}
-                    disableRipple
-                    component="a"
-                    onClick={closeSidebar}
-                    startIcon={<BrightnessLowTwoToneIcon />}
-                  >
-                    Bankers Profile
-                  </Button>
-                </NextLink>
-              </ListItem>
+            <ListItem component="div">
+              <NextLink href="/dashboards" passHref>
+                <Button
+                  className={currentRoute === '/dashboards' ? 'active' : ''}
+                  disableRipple
+                  component="a"
+                  onClick={closeSidebar}
+                  startIcon={<DashboardCustomizeTwoToneIcon />}
+                >
+                  Bankers Profile
+                </Button>
+              </NextLink>
+            </ListItem>
 
-              <ListItem component="div">
-                <NextLink href="/directory/tasks" passHref>
-                  <Button
-                    className={currentRoute === '/directory/tasks' ? 'active' : ''}
-                    disableRipple
-                    component="a"
-                    onClick={closeSidebar}
-                    startIcon={<BrightnessLowTwoToneIcon />}
-                  >
-                    Bankers Directory
-                  </Button>
-                </NextLink>
-              </ListItem>
+            <ListItem component="div">
+              <NextLink href="/directory/tasks" passHref>
+                <Button
+                  className={currentRoute === '/directory/tasks' ? 'active' : ''}
+                  disableRipple
+                  component="a"
+                  onClick={closeSidebar}
+                  startIcon={<ContactPageTwoToneIcon />}
+                >
+                  Bankers Directory 
+                </Button>
+              </NextLink>
+            </ListItem>
 
-              <ListItem component="div">
-                <NextLink href="/lender/tasks" passHref>
-                  <Button
-                    className={currentRoute === '/lender/tasks' ? 'active' : ''}
-                    disableRipple
-                    component="a"
-                    onClick={closeSidebar}
-                    startIcon={<MmsTwoToneIcon />}
-                  >
-                    Lenders
-                  </Button>
-                </NextLink>
-              </ListItem>
+            <ListItem component="div">
+              <NextLink href="/lender/tasks" passHref>
+                <Button
+                  className={currentRoute === '/lender/tasks' ? 'active' : ''}
+                  disableRipple
+                  component="a"
+                  onClick={closeSidebar}
+                  startIcon={<AccountBalanceTwoToneIcon />}
+                >
+                  Lenders 
+                </Button>
+              </NextLink>
+            </ListItem>
 
-              {userRole === 'admin' && (
+            {userRole === 'admin' && (
+              <>
                 <ListItem component="div">
                   <NextLink href="/user/tasks" passHref>
                     <Button
@@ -179,16 +164,13 @@ function SidebarMenu() {
                       disableRipple
                       component="a"
                       onClick={closeSidebar}
-                      startIcon={<PersonOutlineTwoToneIcon />}
+                      startIcon={<GroupTwoToneIcon />}
                     >
                       Users
                     </Button>
                   </NextLink>
                 </ListItem>
-              )}
 
-              
-              {userRole === 'admin' && (
                 <ListItem component="div">
                   <NextLink href="/directoryReview/tasks" passHref>
                     <Button
@@ -196,45 +178,18 @@ function SidebarMenu() {
                       disableRipple
                       component="a"
                       onClick={closeSidebar}
-                      startIcon={<PersonOutlineTwoToneIcon />}
+                      startIcon={<FactCheckTwoToneIcon />}
                     >
-                      Directory Review
+                      Directory Review <NewBadge />
                     </Button>
                   </NextLink>
                 </ListItem>
-              )}
-            </List>
-          </SubMenuWrapper>
-        </List>
-
-        {/* <List
-          component="div"
-          subheader={
-            <ListSubheader component="div" disableSticky>
-              Accounts
-            </ListSubheader>
-          }
-        >
-          <SubMenuWrapper>
-            <List component="div">
-              <ListItem component="div">
-                <NextLink href="/management/profile" passHref>
-                  <Button
-                    className={currentRoute === '/management/profile' ? 'active' : ''}
-                    disableRipple
-                    component="a"
-                    onClick={closeSidebar}
-                    startIcon={<AccountCircleTwoToneIcon />}
-                  >
-                    User Profile
-                  </Button>
-                </NextLink>
-              </ListItem>
-            </List>
-          </SubMenuWrapper>
-        </List> */}
-      </MenuWrapper>
-    </>
+              </>
+            )}
+          </List>
+        </SubMenuWrapper>
+      </List>
+    </MenuWrapper>
   );
 }
 
