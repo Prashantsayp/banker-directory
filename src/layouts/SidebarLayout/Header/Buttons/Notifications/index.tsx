@@ -11,34 +11,33 @@ import {
   Typography
 } from '@mui/material';
 import { useRef, useState } from 'react';
-import NotificationsActiveTwoToneIcon from '@mui/icons-material/NotificationsActiveTwoTone';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { styled } from '@mui/material/styles';
 
 import { formatDistance, subDays } from 'date-fns';
 
-const NotificationsBadge = styled(Badge)(
-  ({ theme }) => `
-    
-    .MuiBadge-badge {
-        background-color: ${alpha(theme.palette.error.main, 0.1)};
-        color: ${theme.palette.error.main};
-        min-width: 16px; 
-        height: 16px;
-        padding: 0;
+const NotificationsBadge = styled(Badge)(() => ({
+  '& .MuiBadge-badge': {
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    minWidth: 16,
+    height: 16,
+    fontSize: '0.75rem',
+    padding: 0,
+    '&::after': {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      boxShadow: `0 0 0 1px ${alpha('#2563eb', 0.3)}`,
+      content: '""',
+    },
+  },
+}));
 
-        &::after {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            box-shadow: 0 0 0 1px ${alpha(theme.palette.error.main, 0.3)};
-            content: "";
-        }
-    }
-`
-);
+
 
 function HeaderNotifications() {
   const ref = useRef<any>(null);
@@ -63,7 +62,7 @@ function HeaderNotifications() {
               horizontal: 'right'
             }}
           >
-            <NotificationsActiveTwoToneIcon />
+            <NotificationsIcon sx={{color:"#6b7280"}} />
           </NotificationsBadge>
         </IconButton>
       </Tooltip>

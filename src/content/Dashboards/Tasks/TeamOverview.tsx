@@ -14,7 +14,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
+  TextField
 } from '@mui/material';
 import {
   PhoneTwoTone as PhoneIcon,
@@ -23,7 +23,7 @@ import {
   CalendarMonthTwoTone as CalendarIcon,
   WorkHistoryTwoTone as ExperienceIcon,
   EditTwoTone as EditIcon,
-  DeleteTwoTone as DeleteIcon,
+  DeleteTwoTone as DeleteIcon
 } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -47,7 +47,6 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
   const [members, setMembers] = useState<Member[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
-  
 
   const fetchMembers = async () => {
     try {
@@ -80,8 +79,7 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
 
   const handleSaveChanges = async () => {
     if (!editMember) return;
-
-    const { _id, ...updateData } = editMember; // Remove _id from payload
+    const { _id, ...updateData } = editMember;
     try {
       await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/bankers/update-bankers/${_id}`, updateData);
       fetchMembers();
@@ -94,14 +92,15 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
   return (
     <>
       <Grid container spacing={3}>
-        {members.map((member, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
+        {members.map((member) => (
+          <Grid item xs={12} sm={6} md={4} key={member._id}>
             <Paper
               elevation={3}
               sx={{
                 p: 3,
                 borderRadius: 3,
                 position: 'relative',
+                backgroundColor: '#fff',
                 transition: 'transform 0.3s',
                 '&:hover': {
                   transform: 'translateY(-5px)',
@@ -109,51 +108,62 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
                 },
               }}
             >
-         {/* Action Buttons */}
-{userRole === 'admin' && (
-  <Box position="absolute" top={8} right={8}>
-    <Tooltip title="Edit Profile" arrow>
-      <IconButton color="primary" onClick={() => handleEdit(member)}>
-        <EditIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
-    <Tooltip title="Delete Profile" arrow>
-      <IconButton color="error" onClick={() => handleDelete(member._id)}>
-        <DeleteIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
-  </Box>
-)}
-
+              {/* Action Buttons */}
+              {userRole === 'admin' && (
+                <Box position="absolute" top={8} right={8}>
+                  <Tooltip title="Edit Profile" arrow>
+                    <IconButton color="primary" onClick={() => handleEdit(member)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Profile" arrow>
+                    <IconButton color="error" onClick={() => handleDelete(member._id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
 
               {/* Member Details */}
               <Box textAlign="center">
                 <Avatar
-                  src={member.profileImage}
+                  src={member.profileImage || undefined}
                   alt={member.fullName}
                   sx={{
+                    bgcolor: '#2563EB',
                     width: theme.spacing(12),
                     height: theme.spacing(12),
                     mx: 'auto',
                     mb: 2,
-                    border: `3px solid ${theme.palette.primary.main}`,
                   }}
-                />
-                <Typography variant="h5" fontWeight={600}>
+                >
+                  {!member.profileImage && member.fullName?.[0]}
+                </Avatar>
+                <Typography variant="h5" sx={{ color: '#2E3A59', fontWeight: 600 }}>
                   {member.fullName}
                 </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="subtitle2" color="primary">
                   {member.designation}
                 </Typography>
                 <Box display="flex" justifyContent="center" mt={2} mb={1}>
                   <Tooltip title={member.contact || 'No contact'} arrow>
-                    <IconButton color="primary">
-                      <PhoneIcon />
+                    <IconButton
+                      color="primary"
+                      component="a"
+                      href={member.contact ? `tel:${member.contact}` : undefined}
+                      disabled={!member.contact}
+                    >
+                      <PhoneIcon sx={{ color: '#2563EB' }} />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title={member.email || 'No email'} arrow>
-                    <IconButton color="primary">
-                      <EmailIcon />
+                    <IconButton
+                      color="primary"
+                      component="a"
+                      href={member.email ? `mailto:${member.email}` : undefined}
+                      disabled={!member.email}
+                    >
+                      <EmailIcon sx={{ color: '#2563EB' }} />
                     </IconButton>
                   </Tooltip>
                 </Box>
@@ -161,11 +171,47 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
 
               <Divider sx={{ my: 2 }} />
 
-              <Stack spacing={1}>
-                <InfoRow icon={<CalendarIcon />} label="Join Date" value={new Date(member.dateOfJoining).toLocaleDateString()} />
-                <InfoRow icon={<ExperienceIcon />} label="Experience" value={member.totalExperience} />
-                <InfoRow icon={<EmailIcon />} label="Email" value={member.email} />
-                <InfoRow icon={<LocationIcon />} label="Location" value={member.location} />
+              {/* Info rows */}
+              <Stack spacing={1.2}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CalendarIcon sx={{ fontSize: 18, color: '#2563EB' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2E3A59' }}>
+                    Join Date:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#4B5563' }}>
+                    {member.dateOfJoining ? new Date(member.dateOfJoining).toLocaleDateString() : '—'}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <ExperienceIcon sx={{ fontSize: 18, color: '#2563EB' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2E3A59' }}>
+                    Experience:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#4B5563' }}>
+                    {member.totalExperience || '—'}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <EmailIcon sx={{ fontSize: 18, color: '#2563EB' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2E3A59' }}>
+                    Email:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#4B5563', wordBreak: 'break-all' }}>
+                    {member.email || '—'}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <LocationIcon sx={{ fontSize: 18, color: '#2563EB' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#2E3A59' }}>
+                    Location:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#4B5563' }}>
+                    {member.location || '—'}
+                  </Typography>
+                </Stack>
               </Stack>
             </Paper>
           </Grid>
@@ -223,7 +269,7 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
               <TextField
                 label="Joining Date"
                 type="date"
-                value={editMember.dateOfJoining.slice(0, 10)}
+                value={editMember.dateOfJoining ? editMember.dateOfJoining.slice(0, 10) : ''}
                 onChange={(e) => setEditMember({ ...editMember, dateOfJoining: e.target.value })}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
@@ -243,23 +289,3 @@ const TeamOverview = ({ userRole = 'admin' }: { userRole?: 'admin' | 'user' }) =
 };
 
 export default TeamOverview;
-
-const InfoRow = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) => (
-  <Box display="flex" alignItems="center" gap={1}>
-    <Box color="primary.main">{icon}</Box>
-    <Typography variant="body2" fontWeight={500}>
-      {label}:
-    </Typography>
-    <Typography variant="body2" color="text.secondary">
-      {value}
-    </Typography>
-  </Box>
-);

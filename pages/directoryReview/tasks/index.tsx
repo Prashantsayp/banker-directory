@@ -2,6 +2,9 @@ import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
 import { useEffect, useState } from 'react';
 import Footer from '@/components/Footer';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import {
   Avatar,
   Box,
@@ -19,7 +22,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button
+  Button,
+  Skeleton
 } from '@mui/material';
 import axios from 'axios';
 
@@ -37,9 +41,23 @@ interface BankerReview {
   rejectionReason?: string;
 }
 
+interface ReviewCounts {
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
 const BankerReviewPage = () => {
   const [reviews, setReviews] = useState<BankerReview[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [counts, setCounts] = useState<ReviewCounts>({
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
+  const [countsLoading, setCountsLoading] = useState(true);
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -66,14 +84,34 @@ const BankerReviewPage = () => {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const fetchCounts = async () => {
+    setCountsLoading(true);
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/approve-request/${id}`);
-      setReviews(prev =>
-        prev.map(r => r._id === id ? { ...r, status: 'approved' } : r)
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/review-counts`
+      );
+      setCounts(res.data);
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to fetch counts', severity: 'error' });
+    } finally {
+      setCountsLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    // Optimistic UI: update UI first
+    setReviews(prev => prev.map(r => (r._id === id ? { ...r, status: 'approved' } : r)));
+    setCounts(c => ({ ...c, pending: Math.max(0, c.pending - 1), approved: c.approved + 1 }));
+
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/approve-request/${id}`
       );
       setSnackbar({ open: true, message: 'Approved successfully!', severity: 'success' });
     } catch {
+      // revert on failure
+      setReviews(prev => prev.map(r => (r._id === id ? { ...r, status: 'pending' } : r)));
+      setCounts(c => ({ ...c, pending: c.pending + 1, approved: Math.max(0, c.approved - 1) }));
       setSnackbar({ open: true, message: 'Approval failed', severity: 'error' });
     }
   };
@@ -90,20 +128,30 @@ const BankerReviewPage = () => {
       return;
     }
 
+    // Optimistic UI
+    setReviews(prev =>
+      prev.map(r =>
+        r._id === selectedBankerId ? { ...r, status: 'rejected', rejectionReason } : r
+      )
+    );
+    setCounts(c => ({ ...c, pending: Math.max(0, c.pending - 1), rejected: c.rejected + 1 }));
+
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/reject-request/${selectedBankerId}`,
         { reason: rejectionReason }
       );
-      setReviews(prev =>
-        prev.map(r => r._id === selectedBankerId
-          ? { ...r, status: 'rejected', rejectionReason }
-          : r)
-      );
       setSubmittedReason(rejectionReason);
       setShowReasonDialog(true);
       setSnackbar({ open: true, message: 'Rejected successfully!', severity: 'success' });
     } catch {
+      // revert on failure
+      setReviews(prev =>
+        prev.map(r =>
+          r._id === selectedBankerId ? { ...r, status: 'pending', rejectionReason: undefined } : r
+        )
+      );
+      setCounts(c => ({ ...c, pending: c.pending + 1, rejected: Math.max(0, c.rejected - 1) }));
       setSnackbar({ open: true, message: 'Rejection failed', severity: 'error' });
     } finally {
       setOpenDialog(false);
@@ -112,6 +160,8 @@ const BankerReviewPage = () => {
   };
 
   useEffect(() => {
+    // Load counts + list in parallel
+    fetchCounts();
     fetchReviews();
   }, []);
 
@@ -119,10 +169,64 @@ const BankerReviewPage = () => {
     <>
       <Head><title>Banker Submissions Review</title></Head>
 
+      {/* Summary Cards */}
+      <Grid container spacing={2} paddingX={2} marginTop={2}>
+        {[
+          {
+            label: 'TOTAL PENDING',
+            value: counts.pending,
+            icon: <PendingActionsIcon sx={{ color: '#EF4444', fontSize: 28 }} />,
+            border: '#F87171'
+          },
+          {
+            label: 'TOTAL APPROVED',
+            value: counts.approved,
+            icon: <CheckCircleIcon sx={{ color: '#10B981', fontSize: 28 }} />,
+            border: '#34D399'
+          },
+          {
+            label: 'TOTAL REJECTED',
+            value: counts.rejected,
+            icon: <CancelIcon sx={{ color: '#F59E0B', fontSize: 28 }} />,
+            border: '#FBBF24'
+          }
+        ].map((card, idx) => (
+          <Grid item xs={12} sm={4} key={idx}>
+            <Paper
+              elevation={1}
+              sx={{
+                backgroundColor: '#fff',
+                p: 2.5,
+                borderRadius: 2,
+                borderBottom: `4px solid ${card.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.2,
+                alignItems: 'flex-start'
+              }}
+            >
+              {card.icon}
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#6B7280' }}>
+                {card.label}
+              </Typography>
+
+              {countsLoading ? (
+                <Skeleton variant="text" width={40} height={34} />
+              ) : (
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#111827' }}>
+                  {card.value}
+                </Typography>
+              )}
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Reviews list */}
       {loading ? (
         <CircularProgress sx={{ mt: 4, display: 'block', mx: 'auto' }} />
       ) : (
-        <Grid container spacing={4} padding={2}>
+        <Grid container spacing={4} padding={2} marginTop={1}>
           {reviews.length === 0 ? (
             <Grid item xs={12}>
               <Typography color="text.secondary" align="center">
@@ -224,20 +328,26 @@ const BankerReviewPage = () => {
 
                   <Box display="flex" flexDirection="column" justifyContent="flex-end" gap={1} mt={2}>
                     {banker.status === 'approved' ? (
-                      <Chip label="Approved" sx={{
-                        color: '#047857',
-                        borderColor: '#6EE7B7',
-                        backgroundColor: '#ECFDF5',
-                        fontWeight: 600
-                      }} />
+                      <Chip
+                        label="Approved"
+                        sx={{
+                          color: '#047857',
+                          borderColor: '#6EE7B7',
+                          backgroundColor: '#ECFDF5',
+                          fontWeight: 600
+                        }}
+                      />
                     ) : banker.status === 'rejected' ? (
                       <>
-                        <Chip label="Rejected" sx={{
-                          color: '#B91C1C',
-                          borderColor: '#FCA5A5',
-                          backgroundColor: '#FEF2F2',
-                          fontWeight: 600
-                        }} />
+                        <Chip
+                          label="Rejected"
+                          sx={{
+                            color: '#B91C1C',
+                            borderColor: '#FCA5A5',
+                            backgroundColor: '#FEF2F2',
+                            fontWeight: 600
+                          }}
+                        />
                         {banker.rejectionReason && (
                           <Typography
                             variant="body2"

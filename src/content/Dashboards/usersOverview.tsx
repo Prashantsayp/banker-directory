@@ -514,8 +514,7 @@ function UserOverview() {
         message={snackbarMessage}
         severity={snackbarSeverity}
         onClose={handleSnackbarClose}
-        duration={4000}
-      />
+        duration={4000} l={undefined}      />
     </>
   );
 }

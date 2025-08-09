@@ -1,16 +1,11 @@
-// pages/banker-directory/index.tsx
 
-import Head from 'next/head';
 import SidebarLayout from '@/layouts/SidebarLayout';
-import { ChangeEvent, useEffect, useState } from 'react';
-import PageHeader from '@/content/Dashboards/Tasks/PageHeader';
+import {  useEffect, useState } from 'react';
 import Footer from '@/components/Footer';
-
 import {
   Box,
   Grid,
-  Tab,
-  Tabs,
+  
   Typography,
   Avatar,
   Paper,
@@ -19,17 +14,25 @@ import {
   Stack,
   TextField,
   Container,
-  Card,
   MenuItem,
-  Pagination
+  Pagination,
+ Dialog,
+  DialogTitle,
+  DialogContent,
+ 
+  IconButton,
+  Button
+
+  
 } from '@mui/material';
 import axios from 'axios';
-import PageTitleWrapper from '@/components/PageTitleWrapper';
 import { jwtDecode } from 'jwt-decode';
 import SearchTextField from '../../../pages/components/searchTextFied';
 import useDebounce from 'hooks/useDebounce';
 import BankerEditDialog from '../../components/BankerEditDialog';
-
+import AddIcon from '@mui/icons-material/Add';
+import DirectoryForm from '../../../src/content/Dashboards/Tasks/BankerDirectoryForm'; 
+import CloseIcon from '@mui/icons-material/Close';
 interface Banker {
   _id: string;
   bankerName: string;
@@ -53,11 +56,14 @@ const BankerOverview = ({ role }: { role: string | null }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
+  const [openFormModal, setOpenFormModal] = useState(false);
+
 
   const debouncedLocation = useDebounce(searchLocation, 500);
   const debouncedBanker = useDebounce(searchBanker, 500);
   const debouncedAssociated = useDebounce(searchAssociatedWith, 500);
   const debouncedEmail = useDebounce(searchEmailOfficial, 500);
+
 
   useEffect(() => {
     setPage(1);
@@ -132,19 +138,67 @@ const BankerOverview = ({ role }: { role: string | null }) => {
   };
 
   return (
-    <Grid container spacing={4} padding={2}>
-      <Grid item xs={12}>
-        <Box display="flex" gap={1} flexWrap="wrap">
-          <SearchTextField label="Search by Location" value={searchLocation} onChange={setSearchLocation} onClear={() => handleClearSearch('location')} icon="📍" />
-          <SearchTextField label="Search by Associated With" value={searchAssociatedWith} onChange={setSearchAssociatedWith} onClear={() => handleClearSearch('associated')} icon="🏦" />
-          <SearchTextField label="Search by Official Email" value={searchEmailOfficial} onChange={setSearchEmailOfficial} onClear={() => handleClearSearch('emailOfficial')} icon="📧" />
-          <SearchTextField label="Search by Banker" value={searchBanker} onChange={setSearchBanker} onClear={() => handleClearSearch('banker')} icon="👤" maxWidth={250} />
-        </Box>
-      </Grid>
+    <Box sx={{ px: 2, py: 1 }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Box display="flex" gap={1} flexWrap="wrap">
+            <SearchTextField label="Search by Location" value={searchLocation} onChange={setSearchLocation} onClear={() => handleClearSearch('location')} icon="📍" />
+            <SearchTextField label="Search by Associated With" value={searchAssociatedWith} onChange={setSearchAssociatedWith} onClear={() => handleClearSearch('associated')} icon="🏦" />
+            <SearchTextField label="Search by Official Email" value={searchEmailOfficial} onChange={setSearchEmailOfficial} onClear={() => handleClearSearch('emailOfficial')} icon="📧" />
+            <SearchTextField label="Search by Banker" value={searchBanker} onChange={setSearchBanker} onClear={() => handleClearSearch('banker')} icon="👤" maxWidth={250} />
+          </Box>
+        </Grid>
 
-      {filteredBankers.map((banker) => (
-        <Grid item xs={12} sm={6} md={4} key={banker._id}>
-             <Paper
+      <Grid item xs={12}>
+  <Box display="flex" justifyContent="flex-end">
+    <Button
+      variant="contained"
+      startIcon={<AddIcon />}
+      onClick={() => setOpenFormModal(true)}
+    >
+      Add Banker Directory
+    </Button>
+  </Box>
+
+  {/* Modal with DirectoryForm */}
+  <Dialog
+    open={openFormModal}
+    onClose={() => setOpenFormModal(false)}
+    maxWidth="md"
+    fullWidth
+    scroll="body"
+    PaperProps={{ sx: { borderRadius: 3 ,background:"#fff"} }}
+  >
+    <DialogTitle
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontWeight: 600,
+        color:"primary.main"
+      }}
+    >
+      Add Banker Directory
+      <IconButton onClick={() => setOpenFormModal(false)}>
+        <CloseIcon />
+      </IconButton>
+    </DialogTitle>
+    <DialogContent dividers>
+      <DirectoryForm
+        onSuccess={() => {
+          setOpenFormModal(false);
+          // Optional: trigger data refresh
+        }}
+      />
+    </DialogContent>
+  </Dialog>
+</Grid>
+
+
+        {filteredBankers.map((banker) => (
+          <Grid item xs={12} sm={6} md={4} key={banker._id}>
+            {/* Existing card design retained here */}
+   <Paper
       elevation={2}
       sx={{
         p: 3,
@@ -282,46 +336,108 @@ const BankerOverview = ({ role }: { role: string | null }) => {
           />
         </Box>
       )}
-    </Paper>
-  </Grid>
-))}
+    </Paper>          </Grid>
+        ))}
 
-      {filteredBankers.length === 0 && (
-        <Grid item xs={12}>
-          <Typography align="center" color="text.secondary">No bankers match your search criteria.</Typography>
-        </Grid>
-      )}
+        {filteredBankers.length === 0 && (
+          <Grid item xs={12}>
+            <Typography align="center" color="text.secondary">
+              No bankers match your search criteria.
+            </Typography>
+          </Grid>
+        )}
 
       {totalCount > 0 && (
-        <Grid item xs={12} mt={2} display="flex" justifyContent="space-between" alignItems="center">
-          <Pagination count={Math.ceil(totalCount / limit)} page={page} onChange={(_, value) => setPage(value)} color="primary" />
-          <TextField select label="Rows per page" value={limit} onChange={(e) => { setLimit(parseInt(e.target.value)); setPage(1); }} size="small" sx={{ width: 150 }}>
-            {[6, 9, 12, 15, 20].map((val) => (<MenuItem key={val} value={val}>{val}</MenuItem>))}
-          </TextField>
-        </Grid>
-      )}
+  <Grid
+    item
+    xs={12}
+    mt={2}
+    display="flex"
+    justifyContent="space-between"
+    alignItems="center"
+  >
+    <Pagination
+      count={Math.ceil(totalCount / limit)}
+      page={page}
+      onChange={(_, value) => setPage(value)}
+      color="primary"
+      sx={{
+        '& .MuiPaginationItem-root': {
+          color: '#2563EB', // Primary blue text
+        },
+        '& .Mui-selected': {
+          backgroundColor: '#2563EB',
+          color: '#fff',
+          '&:hover': {
+            backgroundColor: '#1E40AF'
+          }
+        }
+      }}
+    />
 
-      <BankerEditDialog
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        banker={editBanker}
-        setBanker={(data) => setEditBanker(data)}
-        onSave={handleSaveChanges}
-        loading={loading}
-      />
-    </Grid>
+    <TextField
+      select
+      label="Rows per page"
+      value={limit}
+      onChange={(e) => {
+        setLimit(parseInt(e.target.value));
+        setPage(1);
+      }}
+      size="small"
+      sx={{
+        width: 150,
+        backgroundColor: '#f9fafb',
+        borderRadius: 1,
+        '& .MuiOutlinedInput-root': {
+          backgroundColor: '#f9fafb',
+          '& fieldset': {
+            borderColor: '#cbd5e1'
+          },
+          '&:hover fieldset': {
+            borderColor: '#94a3b8'
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: '#2563EB'
+          }
+        },
+        '& .MuiInputLabel-root': {
+          color: '#374151',
+          fontWeight: 500
+        },
+        '& .Mui-focused .MuiInputLabel-root': {
+          color: '#2563EB'
+        }
+      }}
+    >
+      {[6, 9, 12, 15, 20].map((val) => (
+        <MenuItem key={val} value={val}>
+          {val}
+        </MenuItem>
+      ))}
+    </TextField>
+  </Grid>
+)}
+
+
+        <BankerEditDialog
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          banker={editBanker}
+          setBanker={(data) => setEditBanker(data)}
+          onSave={handleSaveChanges}
+          loading={loading}
+        />
+      </Grid>
+    </Box>
   );
 };
 
 const LendersTasks = () => {
-  const [currentTab, setCurrentTab] = useState<string>('overview');
+ 
   const [role, setRole] = useState<string | null>(null);
 
-  const tabs = [{ value: 'overview', label: 'Bankers Directory' }];
+  // const tabs = [{ value: 'overview', label: 'Bankers Directory' }];
 
-  const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
-    setCurrentTab(value);
-  };
 
   useEffect(() => {
     const getUserRole = (): string | null => {
@@ -342,42 +458,18 @@ const LendersTasks = () => {
 
   return (
     <>
-      <Head>
-        <title>Bankers Directory</title>
-      </Head>
-      <PageTitleWrapper>
-        {role && (
-          <PageHeader onCreated={() => window.location.reload()} showAddButton={!!role} />
-        )}
-      </PageTitleWrapper>
-
-      <Container maxWidth="lg">
-        <Box borderBottom={1} borderColor="divider">
-          <Tabs
-            value={currentTab}
-            onChange={handleTabsChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            textColor="primary"
-            indicatorColor="primary"
-          >
-            {tabs.map((tab) => (
-              <Tab key={tab.value} label={tab.label} value={tab.value} />
-            ))}
-          </Tabs>
+     
+      <Container maxWidth="lg" sx={{ backgroundColor: '#e5e7eb', minHeight: '100vh', py: 3 }}>
+        <Box borderBottom={1} borderColor="divider" mb={2}>
+       
         </Box>
-
-        <Card variant="outlined" sx={{ mt: 2 }}>
-          <Grid container>
-            {currentTab === 'overview' && (
-              <Grid item xs={12}>
-                <Box p={4}>
-                  <BankerOverview role={role} />
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-        </Card>
+        <Grid container>
+          
+            <Grid item xs={12}>
+              <BankerOverview role={role} />
+            </Grid>
+          
+        </Grid>
       </Container>
       <Footer />
     </>

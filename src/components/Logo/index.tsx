@@ -54,14 +54,14 @@ function Logo() {
             1.0
           </Box>
        
-        <Box
+        {/* <Box
           sx={{
             fontSize: (theme) => theme.typography.pxToRem(15),
             fontWeight: (theme) => theme.typography.fontWeightBold,
           }}
         >
           Bankers Directory
-        </Box>
+        </Box> */}
       </Box>
     </LogoWrapper>
   );
