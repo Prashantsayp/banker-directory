@@ -17,6 +17,9 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import { CircularProgress, Box } from '@mui/material';
 
+// ⬇️ ADD: NextAuth SessionProvider
+import { SessionProvider } from 'next-auth/react';
+
 const clientSideEmotionCache = createEmotionCache();
 
 type NextPageWithLayout = NextPage & {
@@ -29,29 +32,24 @@ interface TokyoAppProps extends AppProps {
 }
 
 function TokyoApp(props: TokyoAppProps) {
+  // ⬇️ NOTE: pageProps me session aa sakta hai (NextAuth)
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const getLayout = Component.getLayout ?? ((page) => page);
 
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    // 🔥 Remove global loader after hydration
     const loader = document.getElementById('global-loader');
     if (loader) loader.remove();
 
-    const timer = setTimeout(() => {
-      setShowContent(true);
-    }, 800); // delay to match loader time
-
+    const timer = setTimeout(() => setShowContent(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  // nProgress on route change
   useEffect(() => {
     Router.events.on('routeChangeStart', nProgress.start);
     Router.events.on('routeChangeError', nProgress.done);
     Router.events.on('routeChangeComplete', nProgress.done);
-
     return () => {
       Router.events.off('routeChangeStart', nProgress.start);
       Router.events.off('routeChangeError', nProgress.done);
@@ -63,34 +61,35 @@ function TokyoApp(props: TokyoAppProps) {
     <CacheProvider value={emotionCache}>
       <Head>
         <title>Bankers Directory</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </Head>
-      <SidebarProvider>
-        <ThemeProvider>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <CssBaseline />
-            {!showContent ? (
-              <Box
-                sx={{
-                  height: '100vh',
-                  width: '100vw',
-                  backgroundColor: '#fff',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <CircularProgress color="primary" />
-              </Box>
-            ) : (
-              getLayout(<Component {...pageProps} />)
-            )}
-          </LocalizationProvider>
-        </ThemeProvider>
-      </SidebarProvider>
+
+      {/* ⬇️ Wrap your app with SessionProvider (pass pageProps.session) */}
+      <SessionProvider session={(pageProps as any)?.session}>
+        <SidebarProvider>
+          <ThemeProvider>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <CssBaseline />
+              {!showContent ? (
+                <Box
+                  sx={{
+                    height: '100vh',
+                    width: '100vw',
+                    backgroundColor: '#fff',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <CircularProgress color="primary" />
+                </Box>
+              ) : (
+                getLayout(<Component {...pageProps} />)
+              )}
+            </LocalizationProvider>
+          </ThemeProvider>
+        </SidebarProvider>
+      </SessionProvider>
     </CacheProvider>
   );
 }

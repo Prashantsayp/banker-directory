@@ -1,11 +1,9 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import axios from 'axios';
 
 import {
-
   Box,
   Button,
   Divider,
@@ -18,6 +16,9 @@ import {
 
 import ExpandMoreTwoToneIcon from '@mui/icons-material/ExpandMoreTwoTone';
 import LockOpenTwoToneIcon from '@mui/icons-material/LockOpenTwoTone';
+
+// ⬇️ NextAuth
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 
 const UserBoxButton = styled(Button)(({ theme }) => `
   padding-left: ${theme.spacing(1)};
@@ -44,71 +45,77 @@ const UserBoxDescription = styled(Typography)(({ theme }) => `
   color: ${lighten(theme.palette.secondary.main, 0.5)};
 `);
 
+function getInitials(input: string) {
+  const s = (input || 'User').trim();
+  const parts = s.split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return s[0]?.toUpperCase() || 'U';
+}
+
 function HeaderUserbox() {
-  const router = useRouter();
+
   const ref = useRef<any>(null);
   const [isOpen, setOpen] = useState(false);
-  const [userName, setUserName] = useState<string>('Loading...');
+
+  // ⬇️ NextAuth session
+  const { data: session, status } = useSession();
+
+  const [userName, setUserName] = useState<string>(''); // no "Loading..." by default
 
   useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.warn("No token found in localStorage");
-    return;
-  }
-
-  try {
-    const decodedPayload = JSON.parse(atob(token.split('.')[1])); // decode JWT payload
-    const email = decodedPayload?.email;
-
-   
-
-    if (email) {
-      
-       axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile-by-email/${email}`, {
-
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-        .then((res) => {
-          const fullName = res.data.fullName || 'User';
-          const nameParts = fullName.trim().split(' ');
-          let initials = 'U';
-          if (nameParts.length >= 2) {
-            initials =
-              nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
-          } else if (nameParts.length === 1) {
-            initials = nameParts[0][0].toUpperCase();
-          }
-          setUserName(initials);
-        })
-        .catch((err) => {
-          console.error('Error fetching profile:', err);
-          setUserName('U');
-        });
+    // 1) If logged in via Google / NextAuth → use session user
+    if (status === 'authenticated' && session?.user) {
+      const display = session.user.name || session.user.email || 'User';
+      setUserName(getInitials(display));
+      return;
     }
-  } catch (err) {
-    console.error('Token decode error:', err);
-  }
-}, []);
 
+    // 2) Fallback: password login (your own JWT in localStorage)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      // final fallback initial
+      if (status !== 'loading') setUserName('U');
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      const email = payload?.email;
+
+      if (email) {
+        axios
+          .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile-by-email/${email}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          .then((res) => {
+            const fullName = res.data?.fullName || res.data?.name || 'User';
+            setUserName(getInitials(fullName));
+          })
+          .catch(() => setUserName('U'));
+      } else {
+        setUserName('U');
+      }
+    } catch {
+      setUserName('U');
+    }
+  }, [session, status]);
 
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
 
-  const handleSignOut = (): void => {
+  const handleSignOut = async (): Promise<void> => {
+    // clear your custom token (password login case)
     localStorage.removeItem('token');
-    router.push('/login');
+    // sign out NextAuth session (Google login case)
+    await nextAuthSignOut({ callbackUrl: '/login' });
   };
 
   return (
     <>
       <UserBoxButton color="secondary" ref={ref} onClick={handleOpen}>
-        {/* <Avatar variant="rounded" alt={userName} src="/static/images/logo/f2fin.png" /> */}
         <Hidden mdDown>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{userName}</UserBoxLabel>
+            <UserBoxLabel variant="body1">{userName || 'U'}</UserBoxLabel>
           </UserBoxText>
         </Hidden>
         <Hidden smDown>
@@ -120,19 +127,15 @@ function HeaderUserbox() {
         anchorEl={ref.current}
         onClose={handleClose}
         open={isOpen}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right'
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right'
-        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuUserBox sx={{ minWidth: 210 }}>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{userName}</UserBoxLabel>
-            <UserBoxDescription variant="body2">Logged in</UserBoxDescription>
+            <UserBoxLabel variant="body1">{userName || 'U'}</UserBoxLabel>
+            <UserBoxDescription variant="body2">
+              {status === 'authenticated' ? 'Logged in' : 'Guest'}
+            </UserBoxDescription>
           </UserBoxText>
         </MenuUserBox>
 
