@@ -8,7 +8,6 @@ import {
   Button,
   Divider,
   Hidden,
-  lighten,
   Popover,
   Typography,
   styled
@@ -41,10 +40,6 @@ const UserBoxLabel = styled(Typography)(({ theme }) => `
   display: block;
 `);
 
-const UserBoxDescription = styled(Typography)(({ theme }) => `
-  color: ${lighten(theme.palette.secondary.main, 0.5)};
-`);
-
 function getInitials(input: string) {
   const s = (input || 'User').trim();
   const parts = s.split(/\s+/);
@@ -53,50 +48,68 @@ function getInitials(input: string) {
 }
 
 function HeaderUserbox() {
-
   const ref = useRef<any>(null);
   const [isOpen, setOpen] = useState(false);
 
   // ⬇️ NextAuth session
   const { data: session, status } = useSession();
 
-  const [userName, setUserName] = useState<string>(''); // no "Loading..." by default
+  const [initials, setInitials] = useState<string>('U');
+  const [fullName, setFullName] = useState<string>('User');
+  const [email, setEmail] = useState<string>('---');
 
   useEffect(() => {
-    // 1) If logged in via Google / NextAuth → use session user
+    // 1) If logged in via Google / NextAuth
     if (status === 'authenticated' && session?.user) {
-      const display = session.user.name || session.user.email || 'User';
-      setUserName(getInitials(display));
+      const displayName = session.user.name || 'User';
+      const displayEmail = session.user.email || '---';
+
+      setInitials(getInitials(displayName));
+      setFullName(displayName);
+      setEmail(displayEmail);
       return;
     }
 
-    // 2) Fallback: password login (your own JWT in localStorage)
+    // 2) Fallback: JWT login
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
-      // final fallback initial
-      if (status !== 'loading') setUserName('U');
+      if (status !== 'loading') {
+        setInitials('U');
+        setFullName('User');
+        setEmail('---');
+      }
       return;
     }
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      const email = payload?.email;
+      const userEmail = payload?.email;
 
-      if (email) {
+      if (userEmail) {
         axios
-          .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile-by-email/${email}`, {
+          .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile-by-email/${userEmail}`, {
             headers: { Authorization: `Bearer ${token}` }
           })
           .then((res) => {
-            const fullName = res.data?.fullName || res.data?.name || 'User';
-            setUserName(getInitials(fullName));
+            const name = res.data?.fullName || res.data?.name || 'User';
+            setInitials(getInitials(name));
+            setFullName(name);
+            setEmail(userEmail);
           })
-          .catch(() => setUserName('U'));
+          .catch(() => {
+            setInitials('U');
+            setFullName('User');
+            setEmail('---');
+          });
       } else {
-        setUserName('U');
+        setInitials('U');
+        setFullName('User');
+        setEmail('---');
       }
     } catch {
-      setUserName('U');
+      setInitials('U');
+      setFullName('User');
+      setEmail('---');
     }
   }, [session, status]);
 
@@ -104,10 +117,8 @@ function HeaderUserbox() {
   const handleClose = (): void => setOpen(false);
 
   const handleSignOut = async (): Promise<void> => {
-    // clear your custom token (password login case)
-    localStorage.removeItem('token');
-    // sign out NextAuth session (Google login case)
-    await nextAuthSignOut({ callbackUrl: '/login' });
+    localStorage.removeItem('token'); // JWT clear
+    await nextAuthSignOut({ callbackUrl: '/login' }); // NextAuth logout
   };
 
   return (
@@ -115,7 +126,7 @@ function HeaderUserbox() {
       <UserBoxButton color="secondary" ref={ref} onClick={handleOpen}>
         <Hidden mdDown>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{userName || 'U'}</UserBoxLabel>
+            <UserBoxLabel variant="body1">{initials}</UserBoxLabel>
           </UserBoxText>
         </Hidden>
         <Hidden smDown>
@@ -130,12 +141,12 @@ function HeaderUserbox() {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuUserBox sx={{ minWidth: 210 }}>
+        <MenuUserBox sx={{ minWidth: 230 }}>
           <UserBoxText>
-            <UserBoxLabel variant="body1">{userName || 'U'}</UserBoxLabel>
-            <UserBoxDescription variant="body2">
-              {status === 'authenticated' ? 'Logged in' : 'Guest'}
-            </UserBoxDescription>
+            <UserBoxLabel variant="body1">{fullName}</UserBoxLabel>
+            <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+              {email}
+            </Typography>
           </UserBoxText>
         </MenuUserBox>
 
