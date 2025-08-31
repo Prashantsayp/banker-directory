@@ -1,7 +1,5 @@
 import {
   Box,
-  Card,
-  Container,
   styled
 } from '@mui/material';
 import type { ReactElement } from 'react';
@@ -9,16 +7,7 @@ import BaseLayout from 'src/layouts/BaseLayout';
 import Head from 'next/head';
 import Hero from 'src/content/Overview/Hero';
 
-const HeaderWrapper = styled(Card)(({ theme }) => ({
-  width: '100%',
-  height: theme.spacing(8),
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(0, 2),
-  backgroundColor: theme.palette.primary.light,
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
-}));
+
 
 const OverviewWrapper = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -34,7 +23,7 @@ function Overview() {
       </Head>
 
       {/* Header */}
-      <HeaderWrapper>
+      {/* <HeaderWrapper>
         <Container
           maxWidth="lg"
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
@@ -54,7 +43,7 @@ function Overview() {
       
           </Box>
         </Container>
-      </HeaderWrapper>
+      </HeaderWrapper> */}
 
       {/* Hero Section */}
       <Hero />
