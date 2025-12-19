@@ -420,7 +420,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         : { color: '#047857', borderColor: '#6EE7B7', bgcolor: '#ECFDF5' };
 
     return (
-      <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+<Stack direction="row" spacing={0.5} flexWrap="wrap">
         {visible.map((label, i) => (
           <Chip
             key={`${label}-${i}`}
@@ -472,7 +472,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         }}
       >
         <Box sx={{ p: { xs: 2, md: 2 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" >
             <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
               Banker Directory
             </Typography>
@@ -885,7 +885,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         <TableCell sx={{ py: 1.1 }}>
                           <Tooltip title={(b.locationCategories || []).join(', ') || '-'} arrow>
                             <span>
-                              <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                              <Stack direction="row" spacing={0.5}  flexWrap="wrap">
                                 {(b.locationCategories || []).slice(0, 4).map((loc, i) => (
                                   <Chip
                                     key={i}
@@ -918,7 +918,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         <TableCell sx={{ py: 1.1 }}>
                           <Tooltip title={(b.product || []).join(', ') || '-'} arrow>
                             <span>
-                              <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                              <Stack direction="row" spacing={0.5}  flexWrap="wrap">
                                 {(b.product || []).slice(0, 4).map((p, i) => (
                                   <Chip
                                     key={i}
