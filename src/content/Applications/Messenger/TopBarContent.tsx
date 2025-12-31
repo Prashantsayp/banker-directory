@@ -1,343 +1,171 @@
-import { useState, SyntheticEvent } from 'react';
+// Header.tsx
 import {
+  alpha,
+  AppBar,
   Box,
   IconButton,
-  Tooltip,
-  Avatar,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Drawer,
-  Divider,
+  InputBase,
+  Toolbar,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  styled,
-  useTheme
+  Avatar
 } from '@mui/material';
-import { formatDistance, subMinutes } from 'date-fns';
-import CallTwoToneIcon from '@mui/icons-material/CallTwoTone';
-import VideoCameraFrontTwoToneIcon from '@mui/icons-material/VideoCameraFrontTwoTone';
-import InfoTwoToneIcon from '@mui/icons-material/InfoTwoTone';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SearchTwoToneIcon from '@mui/icons-material/SearchTwoTone';
-import ColorLensTwoToneIcon from '@mui/icons-material/ColorLensTwoTone';
-import NotificationsOffTwoToneIcon from '@mui/icons-material/NotificationsOffTwoTone';
-import EmojiEmotionsTwoToneIcon from '@mui/icons-material/EmojiEmotionsTwoTone';
-import CancelTwoToneIcon from '@mui/icons-material/CancelTwoTone';
-import BlockTwoToneIcon from '@mui/icons-material/BlockTwoTone';
-import WarningTwoToneIcon from '@mui/icons-material/WarningTwoTone';
-import DescriptionTwoToneIcon from '@mui/icons-material/DescriptionTwoTone';
+import { styled } from '@mui/material/styles';
+import SearchIcon from '@mui/icons-material/Search';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useContext } from 'react';
+import { SidebarContext } from 'src/contexts/SidebarContext';
 
-const RootWrapper = styled(Box)(
-  ({ theme }) => `
-        @media (min-width: ${theme.breakpoints.values.md}px) {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-      }
-`
-);
+// import HeaderNotifications from './HeaderNotifications'; 
 
-const ListItemIconWrapper = styled(ListItemIcon)(
-  ({ theme }) => `
-        min-width: 36px;
-        color: ${theme.colors.primary.light};
-`
-);
+// Search box style
+const SearchRoot = styled('div')(({ theme }) => ({
+  position: 'relative',
+  borderRadius: 999,
+  backgroundColor: alpha('#e5e7eb', 0.8),
+  '&:hover': {
+    backgroundColor: alpha('#e5e7eb', 1)
+  },
+  marginLeft: theme.spacing(2),
+  width: '100%',
+  maxWidth: 320,
+  display: 'flex',
+  alignItems: 'center',
+  paddingInline: theme.spacing(1.5),
+  paddingBlock: theme.spacing(0.25)
+}));
 
-const AccordionSummaryWrapper = styled(AccordionSummary)(
-  ({ theme }) => `
-        &.Mui-expanded {
-          min-height: 48px;
-        }
+const SearchInput = styled(InputBase)(({ theme }) => ({
+  marginLeft: theme.spacing(1),
+  flex: 1,
+  fontSize: 14
+}));
 
-        .MuiAccordionSummary-content.Mui-expanded {
-          margin: 12px 0;
-        }
-
-        .MuiSvgIcon-root {
-          transition: ${theme.transitions.create(['color'])};
-        }
-
-        &.MuiButtonBase-root {
-
-          margin-bottom: ${theme.spacing(0.5)};
-
-          &:last-child {
-            margin-bottom: 0;
-          }
-
-          &.Mui-expanded,
-          &:hover {
-            background: ${theme.colors.alpha.black[10]};
-
-            .MuiSvgIcon-root {
-              color: ${theme.colors.primary.main};
-            }
-          }
-        }
-`
-);
-
-function TopBarContent() {
-  const theme = useTheme();
-
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const [expanded, setExpanded] = useState<string | false>('section1');
-
-  const handleChange =
-    (section: string) => (_event: SyntheticEvent, isExpanded: boolean) => {
-      setExpanded(isExpanded ? section : false);
-    };
+function Header() {
+  const { toggleSidebar } = useContext(SidebarContext);
 
   return (
-    <>
-      <RootWrapper>
-        <Box display="flex" alignItems="center">
-          <Avatar
-            variant="rounded"
-            sx={{
-              width: 48,
-              height: 48
-            }}
-            alt="Zain Baptista"
-            src="/static/images/avatars/1.jpg"
-          />
-          <Box ml={1}>
-            <Typography variant="h4">Zain Baptista</Typography>
-            <Typography variant="subtitle1">
-              {formatDistance(subMinutes(new Date(), 8), new Date(), {
-                addSuffix: true
-              })}
-            </Typography>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: { xs: 'none', lg: 'flex' }
-          }}
-        >
-          <Tooltip placement="bottom" title="Start a voice call">
-            <IconButton color="primary">
-              <CallTwoToneIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip placement="bottom" title="Start a video call">
-            <IconButton color="primary">
-              <VideoCameraFrontTwoToneIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip placement="bottom" title="Conversation information">
-            <IconButton color="primary" onClick={handleDrawerToggle}>
-              <InfoTwoToneIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </RootWrapper>
-      <Drawer
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+        zIndex: (theme) => theme.zIndex.drawer + 1
+      }}
+    >
+      <Toolbar
         sx={{
-          display: { xs: 'none', md: 'flex' }
+          minHeight: 64,
+          px: { xs: 2, lg: 3 },
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 2
         }}
-        variant="temporary"
-        anchor={theme.direction === 'rtl' ? 'left' : 'right'}
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        elevation={9}
       >
-        <Box
-          sx={{
-            minWidth: 360
-          }}
-          p={2}
-        >
+        {/* LEFT: Logo + Name */}
+        <Box display="flex" alignItems="center" gap={1.5}>
+          {/* Mobile menu icon */}
+          <Box sx={{ display: { xs: 'inline-flex', lg: 'none' } }}>
+            <IconButton
+              edge="start"
+              onClick={toggleSidebar}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon sx={{ color: '#4b5563' }} />
+            </IconButton>
+          </Box>
+
           <Box
             sx={{
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2
+            }}
+          >
+            <Box sx={{ width: 38 }}>
+              <img
+                src="/static/images/logo/f2.png" // 👈 tumhara logo
+                alt="F2 Fintech"
+                style={{ width: '100%', display: 'block' }}
+              />
+            </Box>
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#111827', lineHeight: 1.2 }}
+              >
+                FINTECH
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: '#9ca3af', lineHeight: 1.2 }}
+              >
+                Banker Experience OS
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* CENTER: Search (optional) */}
+        <Box
+          sx={{
+            flex: 1,
+            display: { xs: 'none', md: 'flex' },
+            justifyContent: 'center'
+          }}
+        >
+          <SearchRoot>
+            <SearchIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+            <SearchInput
+              placeholder="Search bankers, lenders, users…"
+              inputProps={{ 'aria-label': 'search' }}
+            />
+          </SearchRoot>
+        </Box>
+
+        {/* RIGHT: Icons + Profile */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          {/* Mobile search icon only */}
+          <Box sx={{ display: { xs: 'inline-flex', md: 'none' } }}>
+            <IconButton>
+              <SearchIcon sx={{ color: '#6b7280' }} />
+            </IconButton>
+          </Box>
+
+          {/* Notifications (tumhara refined component) */}
+          {/* <HeaderNotifications /> */}
+
+          {/* User avatar */}
+          <Box
+            sx={{
+              ml: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
             }}
           >
             <Avatar
               sx={{
-                mx: 'auto',
-                my: 2,
-                width: theme.spacing(12),
-                height: theme.spacing(12)
+                width: 32,
+                height: 32,
+                bgcolor: '#2563eb',
+                fontSize: 14,
+                fontWeight: 600
               }}
-              variant="rounded"
-              alt="Zain Baptista"
-              src="/static/images/avatars/1.jpg"
-            />
-            <Typography variant="h4">Zain Baptista</Typography>
-            <Typography variant="subtitle2">
-              Active{' '}
-              {formatDistance(subMinutes(new Date(), 7), new Date(), {
-                addSuffix: true
-              })}
-            </Typography>
+            >
+              AR
+            </Avatar>
           </Box>
-          <Divider
-            sx={{
-              my: 3
-            }}
-          />
-
-          <Accordion
-            expanded={expanded === 'section1'}
-            onChange={handleChange('section1')}
-          >
-            <AccordionSummaryWrapper expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h5">Customize Chat</Typography>
-            </AccordionSummaryWrapper>
-            <AccordionDetails
-              sx={{
-                p: 0
-              }}
-            >
-              <List component="nav">
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <SearchTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Search in Conversation"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <ColorLensTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Change Theme Styling"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <EmojiEmotionsTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Choose Default Emoji"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-              </List>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion
-            expanded={expanded === 'section2'}
-            onChange={handleChange('section2')}
-          >
-            <AccordionSummaryWrapper expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h5">Privacy & Support</Typography>
-            </AccordionSummaryWrapper>
-            <AccordionDetails
-              sx={{
-                p: 0
-              }}
-            >
-              <List component="nav">
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <NotificationsOffTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Turn off notifications"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <CancelTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Ignore all messages"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <BlockTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Block user"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <WarningTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="Something's Wrong"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                    secondary="Report the conversation and provide feedback"
-                    secondaryTypographyProps={{ variant: 'subtitle1' }}
-                  />
-                </ListItem>
-              </List>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion
-            expanded={expanded === 'section3'}
-            onChange={handleChange('section3')}
-          >
-            <AccordionSummaryWrapper expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h5">Shared Files</Typography>
-            </AccordionSummaryWrapper>
-            <AccordionDetails
-              sx={{
-                p: 0
-              }}
-            >
-              <List component="nav">
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <DescriptionTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="HolidayPictures.zip"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                    secondary="You opened in the past year"
-                    secondaryTypographyProps={{ variant: 'subtitle1' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <DescriptionTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="2021Screenshot.jpg"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                    secondary="You edited this file yesterday"
-                    secondaryTypographyProps={{ variant: 'subtitle1' }}
-                  />
-                </ListItem>
-                <ListItem button>
-                  <ListItemIconWrapper>
-                    <DescriptionTwoToneIcon />
-                  </ListItemIconWrapper>
-                  <ListItemText
-                    primary="PresentationDeck.pdf"
-                    primaryTypographyProps={{ variant: 'h5' }}
-                    secondary="Never opened"
-                    secondaryTypographyProps={{ variant: 'subtitle1' }}
-                  />
-                </ListItem>
-              </List>
-            </AccordionDetails>
-          </Accordion>
         </Box>
-      </Drawer>
-    </>
+      </Toolbar>
+    </AppBar>
   );
 }
 
-export default TopBarContent;
+export default Header;

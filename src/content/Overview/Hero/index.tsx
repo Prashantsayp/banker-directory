@@ -9,7 +9,8 @@ import {
   Stack,
   Typography,
   styled,
-  alpha
+  alpha,
+  Chip
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import CoreFeatures from './Feature';
@@ -18,374 +19,573 @@ import FAQSection from '../FAQ';
 import ContactSection from '../Contact';
 import Footer from '../Footer';
 import Navbar from '../Navbar';
+import router from 'next/router';
 
-// ===== Styled =====
-const Wrapper = styled(Box)(({ theme }) => ({
+// ================== STYLED ==================
+
+const PageShell = styled(Box)(({  }) => ({
+  minHeight: '100vh',
+  background:
+    'radial-gradient(circle at top left, #1d4ed8 0, transparent 45%), radial-gradient(circle at top right, #0ea5e9 0, transparent 50%), radial-gradient(circle at bottom, #020617 0, #020617 55%)',
+  color: '#e5e7eb',
+  display: 'flex',
+  flexDirection: 'column'
+}));
+
+const HeroWrapper = styled(Box)(({ theme }) => ({
   position: 'relative',
-  overflow: 'hidden',
-  background: 'linear-gradient(135deg, #f8fbff 0%, #f2f7ff 100%)',
   paddingTop: theme.spacing(10),
-  paddingBottom: theme.spacing(12),
+  paddingBottom: theme.spacing(14),
   [theme.breakpoints.down('md')]: {
     paddingTop: theme.spacing(8),
     paddingBottom: theme.spacing(10)
   }
 }));
 
-const H3 = styled(Typography)(({ theme }) => ({
-  fontSize: '3.6rem',
+const GlowOrb = styled(Box)(() => ({
+  position: 'absolute',
+  borderRadius: '999px',
+  filter: 'blur(40px)',
+  opacity: 0.8,
+  pointerEvents: 'none',
+  mixBlendMode: 'screen'
+}));
+
+const Heading = styled(Typography)(({ theme }) => ({
+  fontSize: '3.2rem',
   lineHeight: 1.1,
   fontWeight: 800,
-  letterSpacing: -0.5,
-  color: '#0f172a',
-  marginTop: theme.spacing(2),
+  letterSpacing: -0.7,
+  color: '#f9fafb',
   [theme.breakpoints.down('md')]: {
-    fontSize: '2.6rem',
+    fontSize: '2.4rem',
     textAlign: 'center'
   }
 }));
 
-const Sub = styled(Typography)(({ theme }) => ({
-  marginTop: theme.spacing(3),
-  color: '#475569',
-  maxWidth: 520,
-  fontSize: 18,
+const HighlightSpan = styled('span')(() => ({
+  background:
+    'linear-gradient(90deg, rgba(56,189,248,1), rgba(129,140,248,1), rgba(236,72,153,1))',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent'
+}));
+
+const SubText = styled(Typography)(({ theme }) => ({
+  marginTop: theme.spacing(2.5),
+  color: alpha('#e5e7eb', 0.75),
+  maxWidth: 540,
+  fontSize: 16,
   [theme.breakpoints.down('md')]: {
     textAlign: 'center',
     marginInline: 'auto'
   }
 }));
 
-const PrimaryBtn = styled(Button)(({ theme }) => ({
-  padding: `${theme.spacing(1.6)} ${theme.spacing(4.2)}`,
+const PrimaryButton = styled(Button)(({ theme }) => ({
+  padding: `${theme.spacing(1.4)} ${theme.spacing(3.6)}`,
   borderRadius: 999,
   fontWeight: 700,
   textTransform: 'none',
-  background: 'linear-gradient(90deg,#3b82f6,#06b6d4)',
-  color: '#fff',
-  boxShadow: '0 10px 24px rgba(59,130,246,.25)',
+  fontSize: 15,
+  background:
+    'linear-gradient(135deg, rgba(56,189,248,1), rgba(37,99,235,1))',
+  color: '#0b1120',
+  boxShadow:
+    '0 18px 40px rgba(15,23,42,0.6), 0 0 0 1px rgba(248,250,252,0.08)',
   '&:hover': {
-    background: 'linear-gradient(90deg,#06b6d4,#3b82f6)'
+    background:
+      'linear-gradient(135deg, rgba(37,99,235,1), rgba(56,189,248,1))',
+    boxShadow:
+      '0 20px 45px rgba(15,23,42,0.8), 0 0 0 1px rgba(248,250,252,0.18)'
   }
 }));
 
-const GhostBtn = styled(Button)(({ theme }) => ({
-  padding: `${theme.spacing(1.6)} ${theme.spacing(4)}`,
+const GhostButton = styled(Button)(({ theme }) => ({
+  padding: `${theme.spacing(1.4)} ${theme.spacing(3.4)}`,
   borderRadius: 999,
   textTransform: 'none',
-  fontWeight: 700,
-  color: theme.palette.grey[900],
-  border: `1.8px solid ${alpha('#0f172a', 0.12)}`,
-  background: '#fff',
+  fontWeight: 600,
+  fontSize: 14,
+  border: `1px solid ${alpha('#cbd5f5', 0.35)}`,
+  background:
+    'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.96))',
+  color: '#e5e7eb',
   '&:hover': {
-    background: alpha('#0f172a', 0.04)
+    background: 'rgba(15,23,42,0.9)'
   }
 }));
 
-// ===== Right Illustration (browser mock) =====
-const BrowserCard = styled(Box)(() => ({
-  width: '100%',
-  borderRadius: 18,
-  background: '#ffffff',
-  boxShadow: '0 12px 35px rgba(2,6,23,.08), 0 3px 10px rgba(2,6,23,.06)',
-  overflow: 'hidden',
-  border: `1px solid ${alpha('#0f172a', 0.06)}`
+const SoftCard = styled(Box)(({ theme }) => ({
+  borderRadius: 24,
+  padding: theme.spacing(2),
+  background:
+    'linear-gradient(145deg, rgba(15,23,42,0.85), rgba(15,23,42,0.96))',
+  border: `1px solid ${alpha('#60a5fa', 0.28)}`,
+  boxShadow:
+    '0 22px 60px rgba(15,23,42,0.9), 0 0 0 1px rgba(15,23,42,0.4)',
+  backdropFilter: 'blur(18px)',
+  position: 'relative',
+  overflow: 'hidden'
 }));
 
-const Dot = ({ color }: { color: string }) => (
-  <Box
-    sx={{
-      width: 10,
-      height: 10,
-      borderRadius: '50%',
-      backgroundColor: color
-    }}
-  />
-);
-
-const Tile = styled(Box)(() => ({
-  borderRadius: 12,
-  background: '#f5f7fb',
-  border: `1px solid ${alpha('#0f172a', 0.06)}`
-}));
-
-const IconBadge = styled(Box)(() => ({
-  width: 34,
-  height: 34,
-  borderRadius: 10,
-  display: 'grid',
-  placeItems: 'center',
-  fontSize: 18,
-  background: 'linear-gradient(135deg,#e0e7ff,#cffafe)',
-  color: '#0f172a',
-  flexShrink: 0
-}));
-
-const TinyBar = styled(Box)(() => ({
-  height: 8,
-  borderRadius: 6,
-  background: alpha('#0f172a', 0.12)
-}));
-
-const IconPill = styled(Box)(() => ({
-  display: 'grid',
-  placeItems: 'center',
-  width: 34,
-  height: 28,
+const StatPill = styled(Box)(() => ({
   borderRadius: 999,
-  border: `1px solid ${alpha('#0f172a', 0.08)}`,
-  background: '#fff',
-  fontSize: 16
-}));
-
-const ListRow = styled(Box)(() => ({
-  display: 'flex',
+  padding: '6px 12px',
+  display: 'inline-flex',
   alignItems: 'center',
-  gap: 12,
-  padding: '10px 12px',
-  borderRadius: 10,
-  background: '#0b1220',
-  color: '#e5e7eb'
+  gap: 6,
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: 1,
+  border: '1px solid rgba(148,163,184,0.4)',
+  background:
+    'radial-gradient(circle at top, rgba(251,191,36,0.08), transparent 60%)'
 }));
 
-// ✅ Motion-wrapped styled component
-const MotionListRow = motion(ListRow);
-
-const LineStub = styled(Box)(() => ({
-  height: 10,
-  borderRadius: 8,
-  background: alpha('#e5e7eb', 0.35),
-  flex: 1
+const SmallDot = styled('span')(() => ({
+  width: 7,
+  height: 7,
+  borderRadius: '999px',
+  background: 'radial-gradient(circle, #22c55e, #16a34a)'
 }));
 
-// ===== Component =====
+const StatNumber = styled(Typography)(() => ({
+  fontSize: 22,
+  fontWeight: 700,
+  color: '#f9fafb'
+}));
+
+const StatLabel = styled(Typography)(() => ({
+  fontSize: 12,
+  color: '#9ca3af'
+}));
+
+const RightTag = styled(Box)(() => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  borderRadius: 999,
+  padding: '4px 10px',
+  fontSize: 11,
+  gap: 6,
+  background: 'rgba(15,23,42,0.9)',
+  border: '1px solid rgba(148,163,184,0.4)'
+}));
+
+// ================== MAIN COMPONENT ==================
+
 const HeroBanner = () => {
-  const leftIcons = ['🏦', '🏢', '💼', '💳', '📈', '🤝'];
-
   return (
     <>
       <Navbar />
-      <Wrapper id="home">
-        {/* soft floating glows */}
-        <motion.div
-          style={{
-            position: 'absolute',
-            top: -60,
-            left: -60,
-            width: 220,
-            height: 220,
-            borderRadius: '50%',
-            background: 'radial-gradient(closest-side,#dbeafe,transparent)'
-          }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div
-          style={{
-            position: 'absolute',
-            bottom: -70,
-            right: -70,
-            width: 260,
-            height: 260,
-            borderRadius: '50%',
-            background: 'radial-gradient(closest-side,#cffafe,transparent)'
-          }}
-          animate={{ y: [0, 18, 0] }}
-          transition={{ duration: 9, repeat: Infinity }}
-        />
+      <PageShell>
+        <HeroWrapper id="home">
+          {/* Glows */}
+          <GlowOrb
+            sx={{
+              top: -80,
+              left: '5%',
+              width: 260,
+              height: 260,
+              background:
+                'radial-gradient(circle, rgba(56,189,248,0.55), transparent 60%)'
+            }}
+          />
+          <GlowOrb
+            sx={{
+              top: 40,
+              right: '8%',
+              width: 320,
+              height: 320,
+              background:
+                'radial-gradient(circle, rgba(129,140,248,0.5), transparent 60%)'
+            }}
+          />
+          <GlowOrb
+            sx={{
+              bottom: -120,
+              left: '18%',
+              width: 320,
+              height: 320,
+              background:
+                'radial-gradient(circle, rgba(251,191,36,0.4), transparent 65%)'
+            }}
+          />
 
-        <Container>
-          <Grid container spacing={8} alignItems="center">
-            {/* LEFT */}
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, x: -24 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <H3 variant="h3">
-                  India’s Most Trusted&nbsp;
-                  <Box component="span" sx={{ color: '#3b82f6' }}>
-                    Lender, Banker & Sales Directory
-                  </Box>
-                </H3>
-
-                <Sub>
-                  Discover verified contacts across Banks, NBFCs & DSAs. <br />
-                  Search by city, product, banker name - close deals faster with
-                  zero time wasted.
-                </Sub>
-
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={2}
-                  sx={{ mt: 1, justifyContent: { xs: 'center', md: 'flex-start' } }}
+          <Container maxWidth="lg">
+            <Grid
+              container
+              spacing={6}
+              alignItems="center"
+            >
+              {/* LEFT SECTION */}
+              <Grid item xs={12} md={6}>
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7 }}
                 >
-                  <PrimaryBtn
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const el = document.querySelector('#directory');
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                  >
-                    Explore Directory
-                  </PrimaryBtn>
+                  <StatPill>
+                    <SmallDot />
+                    <span>Built for Loan Brokers, CAs & Fintech Teams</span>
+                  </StatPill>
 
-                  <GhostBtn href="/onlineform/form-online">
-                    List Your Profile
-                  </GhostBtn>
-                </Stack>
-              </motion.div>
-            </Grid>
+                  <Heading sx={{ mt: 3 }}>
+                    One <HighlightSpan>Lending Network</HighlightSpan>
+                    <br />
+                    For Every Banker You Need.
+                  </Heading>
 
-            {/* RIGHT */}
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.9, delay: 0.1 }}
-              >
-                <BrowserCard>
-                  {/* top bar */}
-                  <Box
+                  <SubText>
+                    F2 Banker Directory brings together verified lenders, product
+                    teams & sales champions across Banks, NBFCs & DSAs — so you
+                    never waste time hunting for the{" "}
+                    <b>“right contact for the right case”</b> again.
+                  </SubText>
+
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      px: 2,
-                      py: 1.2,
-                      background: '#f8fafc',
-                      borderBottom: `1px solid ${alpha('#0f172a', 0.06)}`
+                      mt: 4,
+                      justifyContent: { xs: 'center', md: 'flex-start' }
                     }}
                   >
-                    <Dot color="#ef4444" />
-                    <Dot color="#f59e0b" />
-                    <Dot color="#22c55e" />
-                  </Box>
+                 <PrimaryButton
+  onClick={(e) => {
+    e.preventDefault();
+    router.push('/directory/preview');
+  }}
+>
+  🚀 Explore Directory
+</PrimaryButton>
 
-                  <Grid container spacing={2} sx={{ p: 2 }}>
-                    {/* left: animated category rows (no text) */}
-                    <Grid item xs={12} md={5}>
-                      <Stack
-                        spacing={1.2}
-                        sx={{ background: '#0b1220', p: 1.2, borderRadius: 2 }}
-                      >
-                        {leftIcons.map((ic, i) => (
-                          <MotionListRow
-                            key={i}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.35, delay: i * 0.08 }}
+
+                    <GhostButton href="/onlineform/form-online">
+                      List Your Profile
+                    </GhostButton>
+                  </Stack>
+
+                  {/* stats */}
+                  <Stack
+                    direction="row"
+                    spacing={4}
+                    sx={{ mt: 4 }}
+                  >
+                    <Box>
+                      <StatNumber>25K+</StatNumber>
+                      <StatLabel>Verified Contacts</StatLabel>
+                    </Box>
+                    <Box>
+                      <StatNumber>120+</StatNumber>
+                      <StatLabel>Banks & NBFCs</StatLabel>
+                    </Box>
+                    <Box>
+                      <StatNumber>30+</StatNumber>
+                      <StatLabel>Cities & Micro-markets</StatLabel>
+                    </Box>
+                  </Stack>
+                </motion.div>
+              </Grid>
+
+              {/* RIGHT SECTION */}
+              <Grid item xs={12} md={6}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.1 }}
+                >
+                  <SoftCard>
+                    {/* top row */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 1.5
+                      }}
+                    >
+                      <RightTag>
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '999px',
+                            background:
+                              'radial-gradient(circle, #22c55e, #15803d)'
+                          }}
+                        />
+                        Live banker activity
+                      </RightTag>
+
+                      <Chip
+                        size="small"
+                        label="Directory Snapshot"
+                        sx={{
+                          borderRadius: 999,
+                          fontSize: 11,
+                          height: 24,
+                          color: '#e5e7eb',
+                          borderColor: alpha('#9ca3af', 0.5),
+                          background: 'rgba(15,23,42,0.9)'
+                        }}
+                        variant="outlined"
+                      />
+                    </Box>
+
+                    {/* middle cards */}
+                    <Grid container spacing={1.5}>
+                      {/* Search mock */}
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.2,
+                            borderRadius: 999,
+                            px: 1.4,
+                            py: 0.8,
+                            background:
+                              'linear-gradient(120deg, rgba(15,23,42,0.9), rgba(15,23,42,0.97))',
+                            border: `1px solid ${alpha('#60a5fa', 0.5)}`
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 999,
+                              display: 'grid',
+                              placeItems: 'center',
+                              background:
+                                'radial-gradient(circle, rgba(59,130,246,0.15), transparent 65%)',
+                              fontSize: 14
+                            }}
                           >
-                            <motion.div
-                              animate={{ rotate: [0, 6, -6, 0] }}
-                              transition={{
-                                duration: 3,
-                                repeat: Infinity,
-                                delay: i * 0.2
+                            🔍
+                          </Box>
+                          <Typography
+                            sx={{
+                              fontSize: 13,
+                              color: '#9ca3af',
+                              flex: 1
+                            }}
+                          >
+                            Search: &quot;LAP banker · Delhi · Ticket 1Cr–5Cr&quot;
+                          </Typography>
+                          <Box
+                            sx={{
+                              px: 1,
+                              py: 0.4,
+                              borderRadius: 999,
+                              border: `1px solid ${alpha('#4b5563', 0.7)}`,
+                              fontSize: 11,
+                              color: '#9ca3af'
+                            }}
+                          >
+                            Enter ↵
+                          </Box>
+                        </Box>
+                      </Grid>
+
+                      {/* banker cards */}
+                      <Grid item xs={12} sm={6}>
+                        <Box
+                          sx={{
+                            borderRadius: 16,
+                            p: 1.4,
+                            background:
+                              'radial-gradient(circle at top left, rgba(56,189,248,0.18), rgba(15,23,42,0.96))',
+                            border: `1px solid ${alpha('#38bdf8', 0.4)}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.3
+                          }}
+                        >
+                          <Typography
+                            sx={{ fontSize: 13, color: '#e5e7eb', fontWeight: 600 }}
+                          >
+                            Senior LAP RM · HDFC Bank
+                          </Typography>
+                          <Typography
+                            sx={{ fontSize: 11, color: '#9ca3af' }}
+                          >
+                            Delhi NCR · Ticket 50L–5Cr
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1 }}
+                          >
+                            <Chip
+                              size="small"
+                              label="Fast TAT"
+                              sx={{
+                                height: 22,
+                                borderRadius: 999,
+                                fontSize: 10,
+                                background: 'rgba(22,163,74,0.15)',
+                                color: '#bbf7d0'
                               }}
-                            >
-                              <IconBadge>{ic}</IconBadge>
-                            </motion.div>
-                            <LineStub />
-                          </MotionListRow>
-                        ))}
-                      </Stack>
-                    </Grid>
+                            />
+                            <Chip
+                              size="small"
+                              label="Builder Tie-ups"
+                              sx={{
+                                height: 22,
+                                borderRadius: 999,
+                                fontSize: 10,
+                                background: 'rgba(59,130,246,0.12)',
+                                color: '#bfdbfe'
+                              }}
+                            />
+                          </Stack>
+                        </Box>
+                      </Grid>
 
-                    {/* right: pure icon tiles + pills (no labels) */}
-                    <Grid item xs={12} md={7}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          <Tile
-                            sx={{ height: 120, display: 'grid', placeItems: 'center' }}
+                      <Grid item xs={12} sm={6}>
+                        <Box
+                          sx={{
+                            borderRadius: 16,
+                            p: 1.4,
+                            background:
+                              'radial-gradient(circle at top right, rgba(168,85,247,0.18), rgba(15,23,42,0.96))',
+                            border: `1px solid ${alpha('#a855f7', 0.4)}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.3
+                          }}
+                        >
+                          <Typography
+                            sx={{ fontSize: 13, color: '#e5e7eb', fontWeight: 600 }}
                           >
-                            <motion.div
-                              animate={{ y: [0, -6, 0] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            >
-                              <Typography sx={{ fontSize: 34 }}>🏦</Typography>
-                            </motion.div>
-                            <Box sx={{ mt: 1, width: '70%' }}>
-                              <TinyBar sx={{ mb: 0.6 }} />
-                              <TinyBar sx={{ width: '60%' }} />
-                            </Box>
-                          </Tile>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Tile
-                            sx={{ height: 120, display: 'grid', placeItems: 'center' }}
+                            Business Loan · NBFC Cluster Head
+                          </Typography>
+                          <Typography
+                            sx={{ fontSize: 11, color: '#9ca3af' }}
                           >
-                            <motion.div
-                              animate={{ y: [0, -6, 0] }}
-                              transition={{ duration: 2.2, repeat: Infinity }}
-                            >
-                              <Typography sx={{ fontSize: 34 }}>🏢</Typography>
-                            </motion.div>
-                            <Box sx={{ mt: 1, width: '70%' }}>
-                              <TinyBar sx={{ mb: 0.6 }} />
-                              <TinyBar sx={{ width: '60%' }} />
-                            </Box>
-                          </Tile>
-                        </Grid>
+                            Pan India sourcing · OD & Dropline
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1 }}
+                          >
+                            <Chip
+                              size="small"
+                              label="Doctor Finance"
+                              sx={{
+                                height: 22,
+                                borderRadius: 999,
+                                fontSize: 10,
+                                background: 'rgba(251,191,36,0.14)',
+                                color: '#fef9c3'
+                              }}
+                            />
+                            <Chip
+                              size="small"
+                              label="Scorecard"
+                              sx={{
+                                height: 22,
+                                borderRadius: 999,
+                                fontSize: 10,
+                                background: 'rgba(148,163,184,0.2)',
+                                color: '#e5e7eb'
+                              }}
+                            />
+                          </Stack>
+                        </Box>
+                      </Grid>
 
-                        <Grid item xs={12}>
-                          <Tile sx={{ p: 2 }}>
-                            {/* icon-only pills */}
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              {['🏦', '🏢', '💼', '💳', '📈', '🤝'].map(
-                                (icon, idx) => (
-                                  <motion.div
-                                    key={idx}
-                                    animate={{ y: [0, -4, 0] }}
-                                    transition={{
-                                      duration: 1.6,
-                                      repeat: Infinity,
-                                      delay: idx * 0.1
-                                    }}
-                                  >
-                                    <IconPill>{icon}</IconPill>
-                                  </motion.div>
-                                )
-                              )}
-                            </Stack>
-
-                            {/* decorative bars only */}
-                            <Box sx={{ mt: 2 }}>
-                              <Box
+                      {/* bottom mini row */}
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 1
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', gap: 6 }}>
+                            <Box>
+                              <Typography
                                 sx={{
-                                  height: 10,
-                                  borderRadius: 6,
-                                  background: alpha('#0f172a', 0.08),
-                                  mb: 1.2
+                                  fontSize: 11,
+                                  color: '#9ca3af',
+                                  mb: 0.3
                                 }}
-                              />
-                              <Box
+                              >
+                                Today
+                              </Typography>
+                              <Typography
                                 sx={{
-                                  height: 10,
-                                  width: '70%',
-                                  borderRadius: 6,
-                                  background: alpha('#0f172a', 0.08)
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: '#e5e7eb'
                                 }}
-                              />
+                              >
+                                182 new updates
+                              </Typography>
                             </Box>
-                          </Tile>
-                        </Grid>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontSize: 11,
+                                  color: '#9ca3af',
+                                  mb: 0.3
+                                }}
+                              >
+                                Filtered for you
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: '#e5e7eb'
+                                }}
+                              >
+                                34 perfect matches
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          <Button
+                            size="small"
+                            sx={{
+                              borderRadius: 999,
+                              px: 1.8,
+                              py: 0.4,
+                              textTransform: 'none',
+                              fontSize: 11,
+                              background:
+                                'linear-gradient(120deg, rgba(37,99,235,0.9), rgba(56,189,248,0.9))',
+                              color: '#020617',
+                              '&:hover': {
+                                background:
+                                  'linear-gradient(120deg, rgba(56,189,248,1), rgba(37,99,235,1))'
+                              }
+                            }}
+                          >
+                            View matches
+                          </Button>
+                        </Box>
                       </Grid>
                     </Grid>
-                  </Grid>
-                </BrowserCard>
-              </motion.div>
+                  </SoftCard>
+                </motion.div>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
-      </Wrapper>
+          </Container>
+        </HeroWrapper>
 
-      <CoreFeatures />
-      <Pricing />
-      <FAQSection />
-      <ContactSection />
-      <Footer />
+        {/* Rest of the page */}
+        <CoreFeatures />
+        <Pricing />
+        <FAQSection />
+        <ContactSection />
+        <Footer />
+      </PageShell>
     </>
   );
 };
