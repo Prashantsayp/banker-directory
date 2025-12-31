@@ -293,7 +293,7 @@ const BankerDirectoryForm = ({ onSuccess }: { onSuccess: () => void }) => {
         open={snackbarOpen}
         message={snackbarMessage}
         severity={snackbarSeverity}
-        onClose={() => setSnackbarOpen(false)} l={undefined}      />
+        onClose={() => setSnackbarOpen(false)}     />
     </Paper>
   );
 };

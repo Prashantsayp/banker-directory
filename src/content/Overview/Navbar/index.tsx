@@ -16,39 +16,60 @@ import {
   Stack,
   Toolbar,
   alpha,
-  styled
+  styled,
+  Divider,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
-/* --- Styled helpers --- */
-const LinkBtn = styled(MuiLink)(({}) => ({
+/* -------- UI Tokens -------- */
+const COLORS = {
+  ink: '#0f172a',
+  blue: '#2563eb',
+};
+
+/* -------- Nav Link -------- */
+const LinkBtn = styled(MuiLink)(() => ({
   textDecoration: 'none',
-  fontWeight: 600,
-  color: '#0f172a',
-  padding: '8px 10px',
-  borderRadius: 8,
+  fontWeight: 500,
+  fontSize: 14,
+  color: COLORS.ink,
+  padding: '6px 10px',
+  borderRadius: 999,
   cursor: 'pointer',
   WebkitTapHighlightColor: 'transparent',
-  '&:hover': { backgroundColor: alpha('#0f172a', 0.06), textDecoration: 'none' },
-  '&:active': { textDecoration: 'none' },
-  '&:focus': { textDecoration: 'none' },
-  '&:focus-visible': { outline: 'none' }
+  transition: 'background-color .16s ease, color .16s ease',
+
+  '&:hover': {
+    backgroundColor: alpha(COLORS.blue, 0.08),
+    color: COLORS.blue,
+    textDecoration: 'none',
+  },
+  '&:active,&:focus,&:focus-visible': {
+    outline: 'none',
+    textDecoration: 'none',
+  },
 }));
 
-const SignUpBtn = styled(Button)(({  }) => ({
+/* -------- Sign Up Button -------- */
+const SignUpBtn = styled(Button)(() => ({
   textTransform: 'none',
   fontWeight: 700,
-  borderRadius: 10,
-  // ⬇️ vertical padding kam, horizontal zyada
-  padding: '6px 20px',   
-  background: 'linear-gradient(90deg,#6b77f6,#7c8bff)',
+  borderRadius: 999,
+  padding: '7px 18px',
+  fontSize: 14,
+  background: 'linear-gradient(90deg,#2563eb,#1d4ed8)',
   color: '#fff',
+  boxShadow: '0 10px 22px rgba(37,99,235,0.30)',
   WebkitTapHighlightColor: 'transparent',
-  '&:hover': { background: 'linear-gradient(90deg,#7c8bff,#6b77f6)' },
-  '&:focus-visible': { outline: 'none' }
+
+  '&:hover': {
+    background: 'linear-gradient(90deg,#1d4ed8,#2563eb)',
+    boxShadow: '0 12px 26px rgba(37,99,235,0.35)',
+  },
+  '&:focus-visible': { outline: 'none' },
 }));
 
-/* --- Brand --- */
+/* -------- BRAND (BACK TO ORIGINAL) -------- */
 const Brand = () => (
   <MuiLink
     href="#home"
@@ -64,9 +85,8 @@ const Brand = () => (
       gap: 1,
       textDecoration: 'none',
       WebkitTapHighlightColor: 'transparent',
-      '&:focus-visible': { outline: 'none' }
+      '&:focus-visible': { outline: 'none' },
     }}
-    aria-label="Home"
   >
     <Box
       component="img"
@@ -74,7 +94,6 @@ const Brand = () => (
       alt="F2 Directory Logo"
       sx={{ height: 60, width: 'auto', display: 'block' }}
     />
-    
   </MuiLink>
 );
 
@@ -83,23 +102,23 @@ type Props = { onToggleTheme?: () => void };
 const Navbar: React.FC<Props> = () => {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  // Center nav items for same-page sections
   const navLinks = [
     { label: 'Home', href: '#home' },
     { label: 'Features', href: '#features' },
-
     { label: 'Pricing', href: '#pricing' },
     { label: 'FAQ', href: '#faq' },
-    { label: 'Contact', href: '#contact' }
+    { label: 'Contact', href: '#contact' },
   ];
 
   const handleAnchorClick = (e: React.MouseEvent, hash: string) => {
     e.preventDefault();
     const el = document.querySelector(hash);
+
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       history.replaceState(null, '', hash);
     }
+
     setDrawerOpen(false);
   };
 
@@ -108,13 +127,12 @@ const Navbar: React.FC<Props> = () => {
       position="sticky"
       elevation={0}
       sx={{
-        background: '#fff',
-        backdropFilter: 'saturate(180%) blur(10px)',
-        borderBottom: `1px solid ${alpha('#0f172a', 0.06)}`
+        backgroundColor: alpha('#ffffff', 0.92),
+        backdropFilter: 'blur(14px)',
+        borderBottom: `1px solid ${alpha('#0f172a', 0.06)}`,
       }}
     >
-      <Container>
-        {/* Grid layout: left brand, center nav, right actions */}
+      <Container maxWidth="lg">
         <Toolbar
           disableGutters
           sx={{
@@ -122,20 +140,23 @@ const Navbar: React.FC<Props> = () => {
             display: 'grid',
             gridTemplateColumns: { xs: '1fr auto', md: '1fr auto 1fr' },
             alignItems: 'center',
-            gap: 2
+            gap: 2,
           }}
         >
-          {/* Left: Brand */}
+          {/* LEFT — Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Brand />
           </Box>
 
-          {/* Center: desktop nav */}
+          {/* CENTER — Desktop Nav */}
           <Stack
             direction="row"
-            spacing={1}
+            spacing={0.5}
             alignItems="center"
-            sx={{ display: { xs: 'none', md: 'flex' }, justifySelf: 'center' }}
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              justifySelf: 'center',
+            }}
           >
             {navLinks.map((link) => (
               <LinkBtn
@@ -148,44 +169,56 @@ const Navbar: React.FC<Props> = () => {
             ))}
           </Stack>
 
-          {/* Right: actions */}
+          {/* RIGHT — Auth Buttons */}
           <Stack
             direction="row"
             spacing={1}
             alignItems="center"
             sx={{ display: { xs: 'none', md: 'flex' }, justifySelf: 'end' }}
           >
-            <LinkBtn href="/login">Sign In</LinkBtn>
-            <SignUpBtn href="/signup" disableRipple disableFocusRipple>
-              Sign Up
-            </SignUpBtn>
+            <SignUpBtn href="/login">Login</SignUpBtn>
+  
           </Stack>
 
-          {/* Mobile hamburger */}
+          {/* MOBILE MENU BUTTON */}
           <IconButton
             edge="end"
             disableRipple
-            disableFocusRipple
-            sx={{ display: { xs: 'inline-flex', md: 'none' }, justifySelf: 'end', WebkitTapHighlightColor: 'transparent' }}
             onClick={() => setDrawerOpen(true)}
-            aria-label="open menu"
+            sx={{
+              display: { xs: 'inline-flex', md: 'none' },
+              WebkitTapHighlightColor: 'transparent',
+            }}
           >
             <MenuIcon />
           </IconButton>
         </Toolbar>
       </Container>
 
-      {/* Mobile Drawer */}
+      {/* -------- MOBILE DRAWER -------- */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        PaperProps={{ sx: { width: 300, WebkitTapHighlightColor: 'transparent' } }}
+        PaperProps={{
+          sx: {
+            width: 300,
+            borderLeft: `1px solid ${alpha('#0f172a', 0.08)}`,
+          },
+        }}
       >
         <Box sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mb: 1 }}
+          >
             <Brand />
           </Stack>
+
+          <Divider sx={{ mb: 1.5, borderColor: alpha('#0f172a', 0.08) }} />
+
           <List>
             {navLinks.map((l) => (
               <ListItem key={l.label} disablePadding>
@@ -194,42 +227,41 @@ const Navbar: React.FC<Props> = () => {
                   href={l.href}
                   onClick={(e: any) => handleAnchorClick(e, l.href)}
                   disableRipple
-                  disableTouchRipple
                   sx={{
-                    WebkitTapHighlightColor: 'transparent',
-                    '&:hover': { backgroundColor: alpha('#0f172a', 0.06) },
-                    '&:focus-visible': { outline: 'none' }
+                    '&:hover': { backgroundColor: alpha('#0f172a', 0.05) },
+                    '&:focus-visible': { outline: 'none' },
                   }}
                 >
                   <ListItemText
                     primary={l.label}
-                    primaryTypographyProps={{ fontWeight: 700 }}
+                    primaryTypographyProps={{ fontWeight: 600, fontSize: 14 }}
                   />
                 </ListItemButton>
               </ListItem>
             ))}
+
+            <Divider sx={{ my: 1.5, borderColor: alpha('#0f172a', 0.08) }} />
+
             <ListItem disablePadding>
               <ListItemButton
                 component="a"
                 href="/login"
                 onClick={() => setDrawerOpen(false)}
-                disableRipple
-                disableTouchRipple
-                sx={{ WebkitTapHighlightColor: 'transparent', '&:focus-visible': { outline: 'none' } }}
               >
                 <ListItemText primary="Sign In" />
               </ListItemButton>
             </ListItem>
+
             <ListItem disablePadding>
               <ListItemButton
                 component="a"
                 href="/signup"
                 onClick={() => setDrawerOpen(false)}
-                disableRipple
-                disableTouchRipple
-                sx={{ WebkitTapHighlightColor: 'transparent', '&:focus-visible': { outline: 'none' } }}
               >
-                <ListItemText primary="Sign Up" />
+                <ListItemText
+                  primary="Sign Up"
+                  primaryTypographyProps={{ fontWeight: 700 }}
+                />
               </ListItemButton>
             </ListItem>
           </List>
@@ -240,3 +272,4 @@ const Navbar: React.FC<Props> = () => {
 };
 
 export default Navbar;
+

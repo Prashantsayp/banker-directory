@@ -1,36 +1,35 @@
-import React from 'react';
-import { Snackbar, Alert, AlertColor, SnackbarCloseReason } from '@mui/material';
+// CustomSnackbar.tsx
 
-interface CustomSnackbarProps {
+import React from 'react';
+import { Snackbar, Alert, AlertColor } from '@mui/material';
+
+export interface CustomSnackbarProps {
   open: boolean;
   message: string;
-  severity?: AlertColor;
-  onClose: (
-    event?: React.SyntheticEvent | Event,
-    reason?: SnackbarCloseReason
-  ) => void;l
+  severity: AlertColor; // 'success' | 'error' | 'info' | 'warning'
   duration?: number;
+  onClose: (event?: React.SyntheticEvent | Event, reason?: string) => void;
 }
 
 const CustomSnackbar: React.FC<CustomSnackbarProps> = ({
   open,
   message,
-  severity = 'info',
-  onClose,
-  duration = 3000
+  severity,
+  duration = 4000,
+  onClose
 }) => {
   return (
     <Snackbar
       open={open}
       autoHideDuration={duration}
       onClose={onClose}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
     >
       <Alert
         onClose={onClose}
         severity={severity}
         variant="filled"
-        sx={{ width: '100%' }}
+        sx={{ borderRadius: 2 }}
       >
         {message}
       </Alert>

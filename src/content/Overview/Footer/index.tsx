@@ -12,15 +12,17 @@ import {
   styled,
   alpha
 } from '@mui/material';
+
 import FacebookIcon from '@mui/icons-material/Facebook';
-import TwitterIcon from '@mui/icons-material/Twitter';  import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import BrushIcon from '@mui/icons-material/Brush'; // Behance-ish glyph
+import InstagramIcon from '@mui/icons-material/Instagram';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 
 /* palette */
 const COLORS = {
   ink: '#0f172a',
   slate: '#64748b',
-  purple: '#6366f1' // bar color
+  purple: '#6366f1'
 };
 
 /* top light area */
@@ -33,18 +35,14 @@ const Top = styled(Box)(({ theme }) => ({
 /* brand logo mark */
 const LogoMark = () => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-  
-    
-    {/* ✅ Replace text with logo image */}
     <Box
       component="img"
-      src="/static/images/logo/f2.png"   // apna logo ka path
+      src="/static/images/logo/f2.png"
       alt="F2 Directory Logo"
       sx={{ height: 68, width: 'auto', display: 'block' }}
     />
   </Box>
 );
-
 
 /* column heading + links */
 const ColTitle = styled(Typography)({
@@ -52,7 +50,14 @@ const ColTitle = styled(Typography)({
   color: COLORS.ink,
   marginBottom: 14
 });
-const FootLink = ({ children, href = '#' }: { children: React.ReactNode; href?: string }) => (
+
+const FootLink = ({
+  children,
+  href = '#'
+}: {
+  children: React.ReactNode;
+  href?: string;
+}) => (
   <MuiLink
     href={href}
     underline="none"
@@ -88,7 +93,7 @@ const Footer: React.FC = () => {
               <Stack spacing={2}>
                 <LogoMark />
                 <Typography sx={{ color: COLORS.slate, maxWidth: 360 }}>
-                  Verified Lenders, Bankers & Sales Partners at one place.  
+                  Verified Lenders, Bankers & Sales Partners at one place.
                   Connect instantly, save time, and grow your business faster.
                 </Typography>
               </Stack>
@@ -137,18 +142,47 @@ const Footer: React.FC = () => {
 
             {/* socials */}
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <IconButton size="small" sx={{ color: '#fff' }}>
-                <FacebookIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" sx={{ color: '#fff' }}>
-                <TwitterIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" sx={{ color: '#fff' }}>
-                <LinkedInIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" sx={{ color: '#fff' }}>
-                <BrushIcon fontSize="small" />
-              </IconButton>
+
+              <MuiLink
+                href="https://www.facebook.com/f2fintech"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconButton size="small" sx={{ color: '#fff' }}>
+                  <FacebookIcon fontSize="small" />
+                </IconButton>
+              </MuiLink>
+
+              <MuiLink
+                href="https://www.instagram.com/f2fintech"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconButton size="small" sx={{ color: '#fff' }}>
+                  <InstagramIcon fontSize="small" />
+                </IconButton>
+              </MuiLink>
+
+              <MuiLink
+                href="https://www.linkedin.com/company/f2fintech"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconButton size="small" sx={{ color: '#fff' }}>
+                  <LinkedInIcon fontSize="small" />
+                </IconButton>
+              </MuiLink>
+
+              <MuiLink
+                href="https://www.youtube.com/channel/UCMyV4yKd27_Vx3Sq2FSDN5A"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconButton size="small" sx={{ color: '#fff' }}>
+                  <YouTubeIcon fontSize="small" />
+                </IconButton>
+              </MuiLink>
+
             </Stack>
 
             {/* policy links */}

@@ -10,6 +10,9 @@ interface SidebarLayoutProps {
   children?: ReactNode;
 }
 
+// same value jo Header.tsx me HEADER_HEIGHT hai
+const HEADER_HEIGHT = 60;
+
 const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
   const theme = useTheme();
 
@@ -19,6 +22,7 @@ const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         sx={{
           flex: 1,
           height: '100%',
+          minHeight: '100vh',
           backgroundColor: '#f4f6fa',
           '.MuiPageTitle-wrapper': {
             background: '#ffffff',
@@ -35,7 +39,7 @@ const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
             zIndex: 5,
             display: 'block',
             flex: 1,
-            pt: `${theme.header.height}`,
+            pt: `${HEADER_HEIGHT}px`, // ⬅️ pehle theme.header.height tha
             backgroundColor: '#f4f6fa',
             [theme.breakpoints.up('lg')]: {
               ml: `${theme.sidebar.width}`

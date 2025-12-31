@@ -1,3 +1,4 @@
+// Sidebar.tsx
 import { useContext } from 'react';
 import Scrollbar from 'src/components/Scrollbar';
 import { SidebarContext } from 'src/contexts/SidebarContext';
@@ -18,9 +19,9 @@ const SidebarWrapper = styled(Box)(({ theme }) => ({
   color: theme.palette.text.primary,
   position: 'relative',
   zIndex: 7,
-  height: '100%',
-  backgroundColor: '#ffffff', // ✅ Sidebar background white
-  borderRight: `1px solid #e5e7eb`, // ✅ Light divider
+  height: '100vh',              // 🔑 full screen height
+  backgroundColor: '#ffffff',
+  borderRight: `1px solid #e5e7eb`,
   paddingBottom: 68
 }));
 
@@ -29,10 +30,36 @@ function Sidebar() {
   const closeSidebar = () => toggleSidebar();
   const theme = useTheme();
 
+  const SidebarContent = (
+    <SidebarWrapper>
+      <Scrollbar>
+        {/* Logo block – exactly tumhara wala */}
+        <Box mt={2} mb={1.5} display="flex" justifyContent="center">
+          <Box sx={{ width: 90 }}>
+            <a href="/">
+              <img
+                src="/static/images/logo/f2.png"
+                alt="F2Fin Logo"
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+            </a>
+          </Box>
+        </Box>
+
+        <Divider sx={{ mx: 2.5, mb: 1.5, background: '#e5e7eb' }} />
+
+        {/* Menu */}
+        <SidebarMenu />
+      </Scrollbar>
+
+      <Divider sx={{ background: '#e5e7eb' }} />
+    </SidebarWrapper>
+  );
+
   return (
     <>
       {/* Desktop Sidebar */}
-      <SidebarWrapper
+      <Box
         sx={{
           display: {
             xs: 'none',
@@ -41,33 +68,12 @@ function Sidebar() {
           position: 'fixed',
           left: 0,
           top: 0,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)' // ✅ Soft shadow
+          height: '100vh',                     // 🔑 parent height
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
         }}
       >
-        <Scrollbar>
-          {/* Logo */}
-          <Box mt={2} display="flex" justifyContent="center">
-            <Box sx={{ width: 90 }}>
-              <a href="/">
-                <img
-                  src="/static/images/logo/f2.png"
-                  alt="F2Fin Logo"
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                />
-              </a>
-            </Box>
-          </Box>
-
-          {/* Divider */}
-          <Divider sx={{ mt: 2, mx: 2, background: '#e5e7eb' }} />
-
-          {/* Menu */}
-          <SidebarMenu />
-        </Scrollbar>
-
-        {/* Bottom Divider */}
-        <Divider sx={{ background: '#e5e7eb' }} />
-      </SidebarWrapper>
+        {SidebarContent}
+      </Box>
 
       {/* Mobile Sidebar Drawer */}
       <Drawer
@@ -78,23 +84,7 @@ function Sidebar() {
         variant="temporary"
         elevation={9}
       >
-        <SidebarWrapper>
-          <Scrollbar>
-            <Box mt={3}>
-              <Box mx={2} sx={{ width: 52 }}>
-                <img
-                  src="/static/images/logo/f2fin.png"
-                  alt="F2Fin Logo"
-                  style={{ width: '100%' }}
-                />
-              </Box>
-            </Box>
-
-            <Divider sx={{ mt: 3, mx: 2, background: '#e5e7eb' }} />
-
-            <SidebarMenu />
-          </Scrollbar>
-        </SidebarWrapper>
+        {SidebarContent}
       </Drawer>
     </>
   );

@@ -381,7 +381,7 @@ const BankerDirectoryPublicForm = () => {
           open={snackbarOpen}
           message={snackbarMessage}
           severity={snackbarSeverity}
-          onClose={() => setSnackbarOpen(false)} l={undefined}        />
+          onClose={() => setSnackbarOpen(false)}     />
       </Paper>
     </Box>
   );
