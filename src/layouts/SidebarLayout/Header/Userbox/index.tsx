@@ -8,10 +8,11 @@ import {
   Box,
   Button,
   Divider,
-  Hidden,
   Popover,
   Typography,
-  styled
+  styled,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 
 import ExpandMoreTwoToneIcon from '@mui/icons-material/ExpandMoreTwoTone';
@@ -20,16 +21,22 @@ import LockOpenTwoToneIcon from '@mui/icons-material/LockOpenTwoTone';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 
 // Avatar button container
-const UserBoxButton = styled(Button)(({ theme }) => `
-  padding: ${theme.spacing(0.5, 1)};
-  border-radius: 999px;
-`);
+const UserBoxButton = styled(Button)(({ theme }) => ({
+  padding: theme.spacing(0.5, 1),
+  borderRadius: 999,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textTransform: 'none',
+  minWidth: 0,
+  maxWidth: '100%'
+}));
 
 // popover top area
-const MenuUserBox = styled(Box)(({ theme }) => `
-  background: ${theme.colors.alpha.black[5]};
-  padding: ${theme.spacing(2)};
-`);
+const MenuUserBox = styled(Box)(({ theme }) => ({
+  background: theme.colors.alpha.black[5],
+  padding: theme.spacing(2)
+}));
 
 function getInitials(input: string) {
   const s = (input || 'User').trim();
@@ -47,6 +54,9 @@ function HeaderUserbox() {
   const [initials, setInitials] = useState('U');
   const [fullName, setFullName] = useState('User');
   const [email, setEmail] = useState('---');
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     // NextAuth session
@@ -83,9 +93,7 @@ function HeaderUserbox() {
           setEmail(userEmail);
         })
         .catch(() => {});
-    } catch {
-      
-    }
+    } catch {}
   }, [session, status]);
 
   const handleSignOut = async () => {
@@ -93,50 +101,75 @@ function HeaderUserbox() {
       localStorage.removeItem('token');
     }
 
-    // Logout from NextAuth WITHOUT redirect
     await nextAuthSignOut({ redirect: false });
 
-    // Force redirect to main login (NO callbackUrl)
     if (typeof window !== 'undefined') {
       window.location.href = 'https://connectbankers.com/login';
     }
   };
 
+  // Mobile pe sirf first name dikhana better lagta hai
+  const displayName = (() => {
+    if (!fullName) return 'User';
+    if (!isMobile) return fullName;
+    return fullName.split(' ')[0]; // first name on mobile
+  })();
+
   return (
     <>
-      {/* Avatar Button */}
-      <UserBoxButton ref={ref} onClick={() => setOpen(true)}>
+      {/* Avatar + name + arrow (mobile + desktop dono pe) */}
+      <UserBoxButton
+        ref={ref}
+        onClick={() => setOpen((prev) => !prev)}
+        sx={{
+          border: '1px solid rgba(148,163,184,0.35)',
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          '&:hover': {
+            backgroundColor: 'rgba(248,250,252,1)'
+          },
+          maxWidth: { xs: 180, sm: '100%' }
+        }}
+      >
         <Avatar
           sx={{
-            width: 24,
-            height: 24,
+            width: 26,
+            height: 26,
             fontSize: 14,
             fontWeight: 700,
             bgcolor: '#2563eb',
             background:
               'linear-gradient(135deg, #6366f1 0%, #2563eb 45%, #0ea5e9 100%)',
-            boxShadow: '0 10px 25px rgba(37,99,235,.25)'
+            boxShadow: '0 8px 18px rgba(37,99,235,.22)'
           }}
         >
           {initials}
         </Avatar>
 
-        <Hidden smDown>
+        <Box
+          sx={{
+            ml: 1,
+            display: 'flex',
+            alignItems: 'center',
+            overflow: 'hidden'
+          }}
+        >
           <Typography
             sx={{
-              ml: 1,
               fontWeight: 700,
-              fontSize: 14,
-              color: '#111827'
+              fontSize: 13,
+              color: '#111827',
+              maxWidth: { xs: 95, sm: 140 },
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden'
             }}
           >
-            {fullName}
+            {displayName}
           </Typography>
-        </Hidden>
-
-        <Hidden smDown>
-          <ExpandMoreTwoToneIcon sx={{ ml: 0.5 }} />
-        </Hidden>
+          <ExpandMoreTwoToneIcon
+            sx={{ ml: 0.5, fontSize: 18, color: '#6b7280', flexShrink: 0 }}
+          />
+        </Box>
       </UserBoxButton>
 
       {/* Popover */}
@@ -147,7 +180,12 @@ function HeaderUserbox() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
-          sx: { mt: 1.5, borderRadius: 2, minWidth: 260 }
+          sx: {
+            mt: 1.5,
+            borderRadius: 2,
+            minWidth: 260,
+            maxWidth: '90vw'
+          }
         }}
       >
         <MenuUserBox>
