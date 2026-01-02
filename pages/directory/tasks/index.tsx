@@ -1863,28 +1863,65 @@ const handleSaveChanges = async () => {
 
                         {/* Actions */}
 
-                  {isAdmin && (                          <TableCell sx={{ py: 0.6 }}>
-                            <Stack direction="row" spacing={1}>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => handleEdit(b)}
-                                startIcon={<EditOutlinedIcon />}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="small"
-                                color="error"
-                                variant="outlined"
-                                onClick={() => handleDelete(b._id)}
-                                startIcon={<DeleteOutlineIcon />}
-                              >
-                                Delete
-                              </Button>
-                            </Stack>
-                          </TableCell>
-                        )}
+                   {isAdmin && (
+            <Box
+              className="action-buttons"
+              display="flex"
+              justifyContent="flex-end"
+              gap={1}
+              mt={2}
+              sx={{
+                opacity: 0.7,
+                transform: 'translateY(4px)',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <Tooltip title="Edit Banker" arrow>
+                <IconButton
+                  onClick={() => handleEdit(b)}
+                  size="small"
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 3,
+                    background:
+                      'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)',
+                    color: '#fff',
+                    boxShadow: '0 8px 18px rgba(79,70,229,0.25)',
+                    '&:hover': {
+                      transform: 'scale(1.06)',
+                      boxShadow: '0 12px 26px rgba(79,70,229,0.35)'
+                    }
+                  }}
+                >
+                  <EditOutlinedIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Delete Banker" arrow>
+                <IconButton
+                  onClick={() => handleDelete(b._id)}
+                  size="small"
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 3,
+                    border: '2px solid #FCA5A5',
+                    color: '#EF4444',
+                    bgcolor: '#FEF2F2',
+                    '&:hover': {
+                      bgcolor: '#EF4444',
+                      color: '#FFFFFF',
+                      transform: 'scale(1.06)',
+                      borderColor: '#EF4444'
+                    }
+                  }}
+                >
+                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
                       </TableRow>
                     ))}
 
