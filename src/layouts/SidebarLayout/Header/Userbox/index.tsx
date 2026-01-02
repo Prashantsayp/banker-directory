@@ -61,7 +61,8 @@ function HeaderUserbox() {
     }
 
     // JWT fallback
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
     try {
@@ -82,19 +83,30 @@ function HeaderUserbox() {
           setEmail(userEmail);
         })
         .catch(() => {});
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [session, status]);
 
   const handleSignOut = async () => {
-    localStorage.removeItem('token');
-    await nextAuthSignOut({ callbackUrl: '/login' });
+    // Remove local JWT token
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+
+    // Logout from NextAuth WITHOUT redirect
+    await nextAuthSignOut({ redirect: false });
+
+    // Force redirect to main login (NO callbackUrl)
+    if (typeof window !== 'undefined') {
+      window.location.href = 'https://connectbankers.com/login';
+    }
   };
 
   return (
     <>
       {/* Avatar Button */}
       <UserBoxButton ref={ref} onClick={() => setOpen(true)}>
-        
         <Avatar
           sx={{
             width: 24,
