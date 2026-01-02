@@ -152,7 +152,6 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
       emailPersonal: form.emailPersonal.trim() || undefined,
       contact: form.contact.trim(),
       product: finalProductList                    // DTO isko allow kar raha hai (error nahi aa raha)
-      // lastCurrentDesignation:  ❌ backend DTO me nahi hai, isliye nahi bhejenge
     };
 
     try {

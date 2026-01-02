@@ -236,7 +236,6 @@ function LoginPage() {
             Login
           </StyledButton>
 
-          {/* Divider */}
           {/* <Typography sx={{ my: 1.25, color: '#9ca3af', fontSize: 13 }}>or</Typography> */}
 
           {/* Continue with Google */}
