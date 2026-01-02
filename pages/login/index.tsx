@@ -52,41 +52,41 @@ function LoginPage() {
     setSnackbarOpen(false);
   };
 
- const handleLogin = async () => {
-  if (!email || !password) {
-    setSnackbarMessage('Email and password are required.');
-    setSnackbarSeverity('error');
-    setSnackbarOpen(true);
-    return;
-  }
-
-  try {
-    const res = await axios.post(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
-      { email: email.trim().toLowerCase(), password }
-    );
-
-    const { access_token, redirectTo } = res.data || {};
-
-    if (access_token) {
-      localStorage.setItem('token', access_token);
-    }
-
-    if (redirectTo) {
-      window.location.href = redirectTo;
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setSnackbarMessage('Email and password are required.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
       return;
     }
 
-    window.location.href = '/';
-  } catch (error: any) {
-    setSnackbarMessage(
-      error?.response?.data?.message || 'Login failed. Please try again.'
-    );
-    setSnackbarSeverity('error');
-    setSnackbarOpen(true);
-  }
-};
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+        { email: email.trim().toLowerCase(), password },
+        { withCredentials: true }
+      );
 
+      const { access_token, redirectTo } = res.data || {};
+
+      if (access_token) {
+        localStorage.setItem('token', access_token);
+      }
+
+      if (redirectTo) {
+        window.location.href = redirectTo;
+        return;
+      }
+
+      window.location.href = '/';
+    } catch (error: any) {
+      setSnackbarMessage(
+        error?.response?.data?.message || 'Login failed. Please try again.'
+      );
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
 
   const handleEnter = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {

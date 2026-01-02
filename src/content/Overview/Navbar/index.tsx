@@ -252,7 +252,7 @@ const Navbar: React.FC<Props> = () => {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
+            {/* <ListItem disablePadding>
               <ListItemButton
                 component="a"
                 href="/signup"
@@ -263,7 +263,7 @@ const Navbar: React.FC<Props> = () => {
                   primaryTypographyProps={{ fontWeight: 700 }}
                 />
               </ListItemButton>
-            </ListItem>
+            </ListItem> */}
           </List>
         </Box>
       </Drawer>
