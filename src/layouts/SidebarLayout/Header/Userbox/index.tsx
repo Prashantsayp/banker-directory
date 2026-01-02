@@ -84,12 +84,11 @@ function HeaderUserbox() {
         })
         .catch(() => {});
     } catch {
-      // ignore
+      
     }
   }, [session, status]);
 
   const handleSignOut = async () => {
-    // Remove local JWT token
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
     }
