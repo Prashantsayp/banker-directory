@@ -11,7 +11,9 @@ import {
   Divider,
   Alert,
   Snackbar,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import axios from 'axios';
 
@@ -20,18 +22,21 @@ interface DirectoryFormProps {
 }
 
 const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [form, setForm] = useState({
     bankerName: '',
     associatedWith: '',
     state: '',
-    cityInput: '',           // user types city text yaha
+    cityInput: '',            // user types city text yaha
     cityList: [] as string[], // chips / multi city
     emailOfficial: '',
     emailPersonal: '',
     contact: '',
     productInput: '',
     productList: [] as string[],
-    lastCurrentDesignation: '' // UI ke liye, payload me nahi bhejenge
+    lastCurrentDesignation: ''
   });
 
   const [error, setError] = useState<string>('');
@@ -46,15 +51,18 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // CITY: manual multi city (comma / Enter se chips)
-  const handleCityBlur = () => {
-    if (!form.cityInput.trim()) return;
-
-    const parts = form.cityInput
+  // Helper: string ko list me convert
+  const parseCommaList = (value: string) =>
+    value
       .split(',')
-      .map((c) => c.trim())
+      .map((v) => v.trim())
       .filter(Boolean);
 
+  /* ---------- CITY: manual multi city (chips) ---------- */
+  const addCityFromInput = () => {
+    if (!form.cityInput.trim()) return;
+
+    const parts = parseCommaList(form.cityInput);
     if (!parts.length) return;
 
     setForm((prev) => ({
@@ -64,6 +72,11 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     }));
   };
 
+  // Desktop blur use karega
+  const handleCityBlur = () => {
+    addCityFromInput();
+  };
+
   const handleRemoveCity = (label: string) => {
     setForm((prev) => ({
       ...prev,
@@ -71,15 +84,11 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     }));
   };
 
-  // PRODUCTS: manual multi product (chips)
-  const handleProductBlur = () => {
+  /* ---------- PRODUCTS: manual multi product (chips) ---------- */
+  const addProductFromInput = () => {
     if (!form.productInput.trim()) return;
 
-    const parts = form.productInput
-      .split(',')
-      .map((p) => p.trim())
-      .filter(Boolean);
-
+    const parts = parseCommaList(form.productInput);
     if (!parts.length) return;
 
     setForm((prev) => ({
@@ -87,6 +96,10 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
       productList: Array.from(new Set([...prev.productList, ...parts])),
       productInput: ''
     }));
+  };
+
+  const handleProductBlur = () => {
+    addProductFromInput();
   };
 
   const handleRemoveProduct = (label: string) => {
@@ -105,10 +118,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     const finalCityList =
       form.cityList.length > 0
         ? form.cityList
-        : form.cityInput
-            .split(',')
-            .map((c) => c.trim())
-            .filter(Boolean);
+        : parseCommaList(form.cityInput);
 
     if (!finalCityList.length) return 'At least one City is required.';
     if (!form.emailOfficial.trim()) return 'Official Email is required.';
@@ -127,37 +137,29 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     setError('');
 
     const finalCityList =
-      form.cityList.length > 0
-        ? form.cityList
-        : form.cityInput
-            .split(',')
-            .map((c) => c.trim())
-            .filter(Boolean);
+      form.cityList.length > 0 ? form.cityList : parseCommaList(form.cityInput);
 
     const finalProductList =
       form.productList.length > 0
         ? form.productList
-        : form.productInput
-            .split(',')
-            .map((p) => p.trim())
-            .filter(Boolean);
+        : parseCommaList(form.productInput);
 
-    // 🚨 DTO ke hisaab se: state = string, city = string
     const payload: any = {
       bankerName: form.bankerName.trim(),
       associatedWith: form.associatedWith.trim(),
-      state: form.state.trim(),                    // ✅ string
-      city: finalCityList.join(', '),              // ✅ single string "Delhi, Noida"
+      state: form.state.trim(),               // ✅ string
+      city: finalCityList.join(', '),         // ✅ single string
       emailOfficial: form.emailOfficial.trim(),
       emailPersonal: form.emailPersonal.trim() || undefined,
       contact: form.contact.trim(),
-      product: finalProductList                    // DTO isko allow kar raha hai (error nahi aa raha)
+      product: finalProductList
+      // lastCurrentDesignation: form.lastCurrentDesignation.trim() || undefined
+      // 👉 DTO me add kar doge to upar line uncomment kar sakte ho
     };
 
     try {
       setLoading(true);
 
-      // ✅ Correct backend route
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/create-directories`,
         payload
@@ -165,9 +167,10 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
 
       console.log('Banker directory created:', res.data);
 
+      // 👉 Pehle snackbar dikhao
       setSuccessOpen(true);
 
-      // Reset form
+      // form reset
       setForm({
         bankerName: '',
         associatedWith: '',
@@ -181,8 +184,6 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
         productList: [],
         lastCurrentDesignation: ''
       });
-
-      onSuccess();
     } catch (err: any) {
       console.error('Create banker directory failed:', err);
       const message =
@@ -284,7 +285,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
           />
         </Grid>
 
-        {/* State (manual string) */}
+        {/* State */}
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
@@ -297,24 +298,54 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
           />
         </Grid>
 
-        {/* Cities (manual multi → chips, but payload string) */}
+        {/* Cities */}
         <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label="City / Cities"
-            name="cityInput"
-            placeholder="Type city and press Enter or comma (e.g. Delhi, Noida)"
-            value={form.cityInput}
-            onChange={handleChange}
-            onBlur={handleCityBlur}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleCityBlur();
-              }
-            }}
-            sx={textFieldStyles}
-          />
+          {isMobile ? (
+            <>
+              <Box display="flex" gap={1}>
+                <TextField
+                  fullWidth
+                  label="City / Cities"
+                  name="cityInput"
+                  placeholder="e.g. Delhi, Noida"
+                  value={form.cityInput}
+                  onChange={handleChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCityFromInput();
+                    }
+                  }}
+                  sx={textFieldStyles}
+                />
+                <Button
+                  variant="contained"
+                  onClick={addCityFromInput}
+                  sx={{ borderRadius: 999, whiteSpace: 'nowrap' }}
+                >
+                  Add
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <TextField
+              fullWidth
+              label="City / Cities"
+              name="cityInput"
+              placeholder="Type city and press Enter or comma (e.g. Delhi, Noida)"
+              value={form.cityInput}
+              onChange={handleChange}
+              onBlur={handleCityBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCityBlur();
+                }
+              }}
+              sx={textFieldStyles}
+            />
+          )}
+
           <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
             {form.cityList.map((c) => (
               <Chip
@@ -376,7 +407,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
           />
         </Grid>
 
-        {/* Designation (UI only, payload me nahi jaa raha) */}
+        {/* Designation */}
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
@@ -397,21 +428,47 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
             Products Handled
           </Typography>
 
-          <TextField
-            fullWidth
-            placeholder="Type product and press Enter or comma (e.g. Home Loan, LAP, OD)..."
-            name="productInput"
-            value={form.productInput}
-            onChange={handleChange}
-            onBlur={handleProductBlur}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleProductBlur();
-              }
-            }}
-            sx={textFieldStyles}
-          />
+          {isMobile ? (
+            <Box display="flex" gap={1}>
+              <TextField
+                fullWidth
+                placeholder="e.g. Home Loan, LAP, OD"
+                name="productInput"
+                value={form.productInput}
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addProductFromInput();
+                  }
+                }}
+                sx={textFieldStyles}
+              />
+              <Button
+                variant="contained"
+                onClick={addProductFromInput}
+                sx={{ borderRadius: 999, whiteSpace: 'nowrap' }}
+              >
+                Add
+              </Button>
+            </Box>
+          ) : (
+            <TextField
+              fullWidth
+              placeholder="Type product and press Enter or comma (e.g. Home Loan, LAP, OD)..."
+              name="productInput"
+              value={form.productInput}
+              onChange={handleChange}
+              onBlur={handleProductBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleProductBlur();
+                }
+              }}
+              sx={textFieldStyles}
+            />
+          )}
 
           <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
             {form.productList.map((p) => (
@@ -429,8 +486,6 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
               />
             ))}
           </Box>
-
-         
         </Grid>
 
         {/* Submit */}
@@ -459,12 +514,29 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
         </Grid>
       </Grid>
 
+      {/* ✅ Snackbar & onSuccess yahi pe */}
       <Snackbar
         open={successOpen}
         autoHideDuration={3000}
-        onClose={() => setSuccessOpen(false)}
-        message="Banker added to directory!"
-      />
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return;
+          setSuccessOpen(false);
+          onSuccess();
+        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => {
+            setSuccessOpen(false);
+            onSuccess();
+          }}
+          severity="success"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          Banker added to directory!
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

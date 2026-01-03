@@ -29,8 +29,6 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  Snackbar,
-  Alert,
   Autocomplete,
   Popover
 } from '@mui/material';
@@ -38,6 +36,7 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import useDebounce from 'hooks/useDebounce';
 import BankerEditDialog from '../../components/BankerEditDialog';
+import CustomSnackbar from '../../../src/components/CustomSnackbar';
 
 import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -53,15 +52,15 @@ import ClearAllIcon from '@mui/icons-material/ClearAll';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 interface Banker {
- _id: string;
+  _id: string;
   bankerName: string;
   associatedWith: string;
-  state?: string | string[];   // 👈 change
-  city?: string | string[];    // 👈 change
+  state?: string | string[];
+  city?: string | string[];
   emailOfficial: string;
   emailPersonal?: string;
   contact: string;
-  product: string[];           // yahi theek hai
+  product: string[];
   lastCurrentDesignation?: string;
 }
 
@@ -83,9 +82,6 @@ const STORAGE_KEYS = {
   view: 'bankerDir:view'
 };
 
-
-
-
 const copyToClipboard = async (text: string) => {
   try {
     if (!text) return false;
@@ -101,6 +97,7 @@ type ActiveFilter = 'stateCity' | 'associated' | 'emailOfficial' | 'banker';
 
 const BankerOverview = ({ role }: { role: string | null }) => {
   const [filteredBankers, setFilteredBankers] = useState<Banker[]>([]);
+const [refreshKey, setRefreshKey] = useState(0);
 
   // filters
   const [selectedState, setSelectedState] = useState<string>('');
@@ -131,7 +128,6 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
   // normalize role for admin checks
   const isAdmin = (role || '').toString().trim().toLowerCase() === 'admin';
-
 
   const [openUploadModal, setOpenUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -200,9 +196,6 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     return citiesByState[selectedState] || [];
   };
 
-  /* Note: keep previous filter values when switching columns so users
-     can toggle between filters without losing their typed values. */
-
   /* ---------- Filters change -> reset page ---------- */
   useEffect(() => {
     setPage(1);
@@ -256,7 +249,8 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     debouncedAssociated,
     debouncedEmail,
     page,
-    limit
+    limit,
+    refreshKey  
   ]);
 
   /* ---------- Handlers ---------- */
@@ -295,87 +289,92 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         );
         setFilteredBankers((prev) => prev.filter((b) => b._id !== id));
         setTotalCount((prev) => Math.max(prev - 1, 0));
+        setSnack({
+          open: true,
+          msg: 'Banker deleted successfully',
+          severity: 'success'
+        });
       } catch (err) {
         console.error('Delete failed:', err);
-        alert('Delete failed!');
+        setSnack({
+          open: true,
+          msg: 'Delete failed!',
+          severity: 'error'
+        });
       } finally {
         setLoading(false);
       }
     }
   };
-const handleSaveChanges = async () => {
-  if (!editBanker) return;
 
-  const {
-    _id,
-    __v,
-    createdAt,
-    updatedAt,
-    state,
-    city,
-    ...rest
-  } = editBanker as any;
+  const handleSaveChanges = async () => {
+    if (!editBanker) return;
 
-  // Agar future me backend ready ho jaye, tab yeh arrays use kar sakte ho
-  // const stateArr: string[] = state
-  //   ? Array.isArray(state)
-  //     ? state
-  //     : [state]
-  //   : [];
-  //
-  // const cityArr: string[] = city
-  //   ? Array.isArray(city)
-  //     ? city
-  //     : [city]
-  //   : [];
+    const {
+      _id,
+      __v,
+      createdAt,
+      updatedAt,
+      state,
+      city,
+      ...rest
+    } = editBanker as any;
 
-  // 🔴 IMPORTANT: Abhi ke liye state/city ko payload me mat bhejna
-  const updatePayload = {
-    bankerName: rest.bankerName,
-    associatedWith: rest.associatedWith,
-    emailOfficial: rest.emailOfficial,
-    emailPersonal: rest.emailPersonal,
-    contact: rest.contact,
-    product: Array.isArray(rest.product)
-      ? rest.product
-      : typeof rest.product === 'string'
-      ? rest.product
-          .split(',')
-          .map((v: string) => v.trim())
-          .filter(Boolean)
-      : [],
-    lastCurrentDesignation: rest.lastCurrentDesignation
+    // Abhi ke liye state/city ko payload me mat bhejna
+    const updatePayload = {
+      bankerName: rest.bankerName,
+      associatedWith: rest.associatedWith,
+      emailOfficial: rest.emailOfficial,
+      emailPersonal: rest.emailPersonal,
+      contact: rest.contact,
+      product: Array.isArray(rest.product)
+        ? rest.product
+        : typeof rest.product === 'string'
+        ? rest.product
+            .split(',')
+            .map((v: string) => v.trim())
+            .filter(Boolean)
+        : [],
+      lastCurrentDesignation: rest.lastCurrentDesignation
+    };
+
+    console.log('🚀 PATCH payload (without state/city) =>', updatePayload);
+
+    try {
+      setLoading(true);
+      const res = await axios.patch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`,
+        updatePayload
+      );
+
+      const updated = res.data;
+      setFilteredBankers(prev =>
+        prev.map(b => (b._id === _id ? { ...b, ...updated } : b))
+      );
+      setEditModalOpen(false);
+      setEditBanker(null);
+
+      setSnack({
+        open: true,
+        msg: 'Banker updated successfully',
+        severity: 'success'
+      });
+    } catch (err: any) {
+      console.error('Update failed:', err);
+      console.log('❌ ERROR RESPONSE:', err?.response?.data);
+      setSnack({
+        open: true,
+        msg: err?.response?.data?.message
+          ? Array.isArray(err.response.data.message)
+            ? err.response.data.message.join(', ')
+            : String(err.response.data.message)
+          : 'Update failed!',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-
-  console.log('🚀 PATCH payload (without state/city) =>', updatePayload);
-
-  try {
-    setLoading(true);
-    const res = await axios.patch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`,
-      updatePayload
-    );
-
-    const updated = res.data;
-    setFilteredBankers(prev =>
-      prev.map(b => (b._id === _id ? { ...b, ...updated } : b))
-    );
-    setEditModalOpen(false);
-  } catch (err: any) {
-    console.error('Update failed:', err);
-    console.log('❌ ERROR RESPONSE:', err?.response?.data);
-    alert(
-      err?.response?.data?.message
-        ? JSON.stringify(err.response.data.message)
-        : 'Update failed!'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
 
   const handleOpenUpload = () => {
     setSelectedFile(null);
@@ -417,9 +416,20 @@ const handleSaveChanges = async () => {
       setOpenUploadModal(false);
       setSelectedFile(null);
       setPage(1);
+      setSnack({
+        open: true,
+        msg: 'Upload completed successfully',
+        severity: 'success'
+      });
     } catch (err: any) {
       console.error('Bulk upload failed:', err);
-      setUploadError(err?.response?.data?.message || 'Upload failed');
+      const msg = err?.response?.data?.message || 'Upload failed';
+      setUploadError(msg);
+      setSnack({
+        open: true,
+        msg,
+        severity: 'error'
+      });
     } finally {
       setUploading(false);
     }
@@ -596,27 +606,53 @@ const handleSaveChanges = async () => {
             <Tab value="grid" icon={<GridViewIcon sx={{ fontSize: 16 }} />} />
             <Tab value="table" icon={<TableChartIcon sx={{ fontSize: 16 }} />} />
           </Tabs>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              mx: 1
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#9CA3AF',
+                fontWeight: 500,
+                mr: 0.5
+              }}
+            >
+              Total:
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#111827',
+                fontWeight: 700
+              }}
+            >
+              {totalCount}
+            </Typography>
+          </Box>
 
-           {role === 'admin' && (
-              <Button
-                variant="contained"
-                size="small"
-                onClick={handleOpenUpload}
-                startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
-                sx={{
-                  textTransform: 'none',
-                  fontSize: 12,
-                  borderRadius: 999,
-                  bgcolor: '#F9FAFB',
-                  color: '#111827',
-                  px: 1.5,
-                  '&:hover': { bgcolor: '#E5E7EB' }
-                }}
-              >
-                Upload
-              </Button>
-            )}
-          
+          {role === 'admin' && (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleOpenUpload}
+              startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                textTransform: 'none',
+                fontSize: 12,
+                borderRadius: 999,
+                bgcolor: '#F9FAFB',
+                color: '#111827',
+                px: 1.5,
+                '&:hover': { bgcolor: '#E5E7EB' }
+              }}
+            >
+              Upload
+            </Button>
+          )}
 
           {/* Filters */}
           <Button
@@ -630,11 +666,11 @@ const handleSaveChanges = async () => {
               borderRadius: 999,
               borderColor: 'rgba(229,231,235,.7)',
               color: '#F3F4F6',
-          background: '#38BDF8',
+              background: '#38BDF8',
               px: 1.6,
               '&:hover': {
                 borderColor: '#FFFFFF',
-                        background: '#38BDF8',
+                background: '#38BDF8'
               }
             }}
           >
@@ -651,14 +687,13 @@ const handleSaveChanges = async () => {
               textTransform: 'none',
               fontSize: 12,
               borderRadius: 999,
-                        background: '#38BDF8',
-
+              background: '#38BDF8',
               borderColor: 'rgba(229,231,235,.7)',
               color: '#F3F4F6',
               px: 1.6,
               '&:hover': {
                 borderColor: '#FFFFFF',
-                        background: '#38BDF8',
+                background: '#38BDF8'
               }
             }}
           >
@@ -680,111 +715,294 @@ const handleSaveChanges = async () => {
               '&:hover': { bgcolor: '#16A34A' }
             }}
           >
-                            Add Banker
-
+            Add Banker
           </Button>
         </Stack>
       </Paper>
 
       {/* Filter Popover - DataGrid style */}
-  <Popover
-  open={filterPopoverOpen}
-  anchorEl={filterAnchorEl}
-  onClose={handleCloseFilterPopover}
-  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-  PaperProps={{
-    sx: {
-      mt: 1.5,
-      borderRadius: 4,
-      p: 3,
-      minWidth: 580,
-      maxWidth: 600,
-      background: 'linear-gradient(145deg, #ffffff 0%, #fafbff 100%)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1.5px solid rgba(226,232,240,0.8)',
-      boxShadow: '0 20px 60px rgba(15,23,42,0.15), 0 0 0 1px rgba(255,255,255,0.5) inset'
-    }
-  }}
->
-  {/* Header */}
-  <Box mb={2.5}>
-    
-  
-  </Box>
-
-  {/* Filter Row */}
-  <Box
-    display="grid"
-    gridTemplateColumns="1.5fr 2.5fr"
-    columnGap={2}
-    alignItems="start"
-    mb={3}
-  >
-    {/* Column Selector */}
-    <TextField
-      select
-      size="small"
-      value={activeFilter}
-      onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
-      variant="outlined"
-      label="Filter By"
-      fullWidth
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: 3,
-          bgcolor: '#F8FAFC',
-          border: '1.5px solid #E2E8F0',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            borderColor: '#CBD5E1',
-            bgcolor: '#FFFFFF'
-          },
-          '&.Mui-focused': {
-            borderColor: '#6366F1',
-            bgcolor: '#FFFFFF',
-            boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
-          },
-          '& fieldset': {
-            border: 'none'
+      <Popover
+        open={filterPopoverOpen}
+        anchorEl={filterAnchorEl}
+        onClose={handleCloseFilterPopover}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            mt: 1.5,
+            borderRadius: 4,
+            p: 3,
+            minWidth: 580,
+            maxWidth: 600,
+            background: 'linear-gradient(145deg, #ffffff 0%, #fafbff 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1.5px solid rgba(226,232,240,0.8)',
+            boxShadow: '0 20px 60px rgba(15,23,42,0.15), 0 0 0 1px rgba(255,255,255,0.5) inset'
           }
-        },
-        '& .MuiInputLabel-root': {
-          color: '#64748B',
-          fontWeight: 600,
-          fontSize: '0.85rem',
-          '&.Mui-focused': {
-            color: '#6366F1'
-          }
-        }
-      }}
-    >
-      <MenuItem value="stateCity" sx={{ fontWeight: 600 }}>State & City</MenuItem>
-      <MenuItem value="associated" sx={{ fontWeight: 600 }}>Associated With</MenuItem>
-      <MenuItem value="emailOfficial" sx={{ fontWeight: 600 }}>Official Email</MenuItem>
-      <MenuItem value="banker" sx={{ fontWeight: 600 }}>Banker Name</MenuItem>
-    </TextField>
+        }}
+      >
+        {/* Header */}
+        <Box
+          mb={2.5}
+          display="flex"
+          alignItems="baseline"
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                color: '#0F172A'
+              }}
+            >
+              Advanced Filters
+            </Typography>
+            <Typography
+              sx={{
+                mt: 0.4,
+                fontSize: '0.8rem',
+                color: '#64748B'
+              }}
+            >
+              {totalCount > 0
+                ? `${totalCount} banker${totalCount === 1 ? '' : 's'} match current filters`
+                : 'No bankers match current filters'}
+            </Typography>
+          </Box>
 
-    {/* Dynamic Value Section */}
-    <Box>
-      {activeFilter === 'stateCity' ? (
-        <Stack direction="row" spacing={1.5}>
-          <Autocomplete
+          {/* Right side chhota chip / badge */}
+          <Chip
+            label={`${totalCount} result${totalCount === 1 ? '' : 's'}`}
             size="small"
-            options={stateOptions}
-            value={selectedState}
-            onChange={(_, v) => {
-              const next = v || '';
-              setSelectedState(next);
-              setSelectedCity('');
+            sx={{
+              bgcolor: '#EEF2FF',
+              color: '#4F46E5',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              borderRadius: 2
             }}
-            sx={{ minWidth: 155, flex: 1 }}
-            renderInput={(params) => (
+          />
+        </Box>
+
+        {/* Filter Row */}
+        <Box
+          display="grid"
+          gridTemplateColumns="1.5fr 2.5fr"
+          columnGap={2}
+          alignItems="start"
+          mb={3}
+        >
+          {/* Column Selector */}
+          <TextField
+            select
+            size="small"
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+            variant="outlined"
+            label="Filter By"
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                bgcolor: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  borderColor: '#CBD5E1',
+                  bgcolor: '#FFFFFF'
+                },
+                '&.Mui-focused': {
+                  borderColor: '#6366F1',
+                  bgcolor: '#FFFFFF',
+                  boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
+                },
+                '& fieldset': {
+                  border: 'none'
+                }
+              },
+              '& .MuiInputLabel-root': {
+                color: '#64748B',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                '&.Mui-focused': {
+                  color: '#6366F1'
+                }
+              }
+            }}
+          >
+            <MenuItem value="stateCity" sx={{ fontWeight: 600 }}>State & City</MenuItem>
+            <MenuItem value="associated" sx={{ fontWeight: 600 }}>Associated With</MenuItem>
+            <MenuItem value="emailOfficial" sx={{ fontWeight: 600 }}>Official Email</MenuItem>
+            <MenuItem value="banker" sx={{ fontWeight: 600 }}>Banker Name</MenuItem>
+          </TextField>
+
+          {/* Dynamic Value Section */}
+          <Box>
+            {activeFilter === 'stateCity' ? (
+              <Stack direction="row" spacing={1.5}>
+                <Autocomplete
+                  size="small"
+                  options={stateOptions}
+                  value={selectedState}
+                  onChange={(_, v) => {
+                    const next = v || '';
+                    setSelectedState(next);
+                    setSelectedCity('');
+                  }}
+                  sx={{ minWidth: 155, flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select State"
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          bgcolor: '#F8FAFC',
+                          border: '1.5px solid #E2E8F0',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: '#CBD5E1',
+                            bgcolor: '#FFFFFF'
+                          },
+                          '&.Mui-focused': {
+                            borderColor: '#6366F1',
+                            bgcolor: '#FFFFFF',
+                            boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
+                          },
+                          '& fieldset': {
+                            border: 'none'
+                          }
+                        },
+                        '& input': {
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          color: '#0F172A'
+                        }
+                      }}
+                    />
+                  )}
+                />
+                <Autocomplete
+                  size="small"
+                  options={getCityOptions()}
+                  value={selectedCity}
+                  onChange={(_, v) => setSelectedCity(v || '')}
+                  disabled={!selectedState}
+                  sx={{ minWidth: 155, flex: 1 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select City"
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          bgcolor: selectedState ? '#F8FAFC' : '#F1F5F9',
+                          border: '1.5px solid #E2E8F0',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: selectedState ? '#CBD5E1' : '#E2E8F0',
+                            bgcolor: selectedState ? '#FFFFFF' : '#F1F5F9'
+                          },
+                          '&.Mui-focused': {
+                            borderColor: '#6366F1',
+                            bgcolor: '#FFFFFF',
+                            boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
+                          },
+                          '& fieldset': {
+                            border: 'none'
+                          }
+                        },
+                        '& input': {
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          color: '#0F172A'
+                        }
+                      }}
+                    />
+                  )}
+                />
+              </Stack>
+            ) : activeFilter === 'associated' ? (
               <TextField
-                {...params}
-                placeholder="Select State"
                 variant="outlined"
+                fullWidth
+                placeholder="Enter associated organization..."
+                value={searchAssociatedWith}
+                onChange={(e) => setSearchAssociatedWith(e.target.value)}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    bgcolor: '#F8FAFC',
+                    border: '1.5px solid #E2E8F0',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: '#CBD5E1',
+                      bgcolor: '#FFFFFF'
+                    },
+                    '&.Mui-focused': {
+                      borderColor: '#6366F1',
+                      bgcolor: '#FFFFFF',
+                      boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
+                    },
+                    '& fieldset': {
+                      border: 'none'
+                    }
+                  },
+                  '& input': {
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: '#0F172A'
+                  }
+                }}
+              />
+            ) : activeFilter === 'emailOfficial' ? (
+              <TextField
+                variant="outlined"
+                fullWidth
+                placeholder="Enter official email..."
+                value={searchEmailOfficial}
+                onChange={(e) => setSearchEmailOfficial(e.target.value)}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    bgcolor: '#F8FAFC',
+                    border: '1.5px solid #E2E8F0',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: '#CBD5E1',
+                      bgcolor: '#FFFFFF'
+                    },
+                    '&.Mui-focused': {
+                      borderColor: '#6366F1',
+                      bgcolor: '#FFFFFF',
+                      boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
+                    },
+                    '& fieldset': {
+                      border: 'none'
+                    }
+                  },
+                  '& input': {
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: '#0F172A'
+                  }
+                }}
+              />
+            ) : (
+              <TextField
+                variant="outlined"
+                fullWidth
+                placeholder="Enter banker name..."
+                value={searchBanker}
+                onChange={(e) => setSearchBanker(e.target.value)}
                 size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -813,772 +1031,608 @@ const handleSaveChanges = async () => {
                 }}
               />
             )}
-          />
-          <Autocomplete
-            size="small"
-            options={getCityOptions()}
-            value={selectedCity}
-            onChange={(_, v) => setSelectedCity(v || '')}
-            disabled={!selectedState}
-            sx={{ minWidth: 155, flex: 1 }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Select City"
-                variant="outlined"
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 3,
-                    bgcolor: selectedState ? '#F8FAFC' : '#F1F5F9',
-                    border: '1.5px solid #E2E8F0',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      borderColor: selectedState ? '#CBD5E1' : '#E2E8F0',
-                      bgcolor: selectedState ? '#FFFFFF' : '#F1F5F9'
-                    },
-                    '&.Mui-focused': {
-                      borderColor: '#6366F1',
-                      bgcolor: '#FFFFFF',
-                      boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
-                    },
-                    '& fieldset': {
-                      border: 'none'
-                    }
-                  },
-                  '& input': {
-                    fontWeight: 600,
-                    fontSize: '0.875rem',
-                    color: '#0F172A'
-                  }
-                }}
-              />
-            )}
-          />
-        </Stack>
-      ) : activeFilter === 'associated' ? (
-        <TextField
-          variant="outlined"
-          fullWidth
-          placeholder="Enter associated organization..."
-          value={searchAssociatedWith}
-          onChange={(e) => setSearchAssociatedWith(e.target.value)}
-          size="small"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              bgcolor: '#F8FAFC',
-              border: '1.5px solid #E2E8F0',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                borderColor: '#CBD5E1',
-                bgcolor: '#FFFFFF'
-              },
-              '&.Mui-focused': {
-                borderColor: '#6366F1',
-                bgcolor: '#FFFFFF',
-                boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
-              },
-              '& fieldset': {
-                border: 'none'
-              }
-            },
-            '& input': {
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              color: '#0F172A'
-            }
-          }}
-        />
-      ) : activeFilter === 'emailOfficial' ? (
-        <TextField
-          variant="outlined"
-          fullWidth
-          placeholder="Enter official email..."
-          value={searchEmailOfficial}
-          onChange={(e) => setSearchEmailOfficial(e.target.value)}
-          size="small"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              bgcolor: '#F8FAFC',
-              border: '1.5px solid #E2E8F0',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                borderColor: '#CBD5E1',
-                bgcolor: '#FFFFFF'
-              },
-              '&.Mui-focused': {
-                borderColor: '#6366F1',
-                bgcolor: '#FFFFFF',
-                boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
-              },
-              '& fieldset': {
-                border: 'none'
-              }
-            },
-            '& input': {
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              color: '#0F172A'
-            }
-          }}
-        />
-      ) : (
-        <TextField
-          variant="outlined"
-          fullWidth
-          placeholder="Enter banker name..."
-          value={searchBanker}
-          onChange={(e) => setSearchBanker(e.target.value)}
-          size="small"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              bgcolor: '#F8FAFC',
-              border: '1.5px solid #E2E8F0',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                borderColor: '#CBD5E1',
-                bgcolor: '#FFFFFF'
-              },
-              '&.Mui-focused': {
-                borderColor: '#6366F1',
-                bgcolor: '#FFFFFF',
-                boxShadow: '0 0 0 3px rgba(99,102,241,0.1)'
-              },
-              '& fieldset': {
-                border: 'none'
-              }
-            },
-            '& input': {
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              color: '#0F172A'
-            }
-          }}
-        />
-      )}
-    </Box>
-  </Box>
-
-  {/* Active Filters Section */}
-  <Box
-    sx={{
-      bgcolor: '#F8FAFC',
-      borderRadius: 3,
-      p: 2,
-      border: '1.5px solid #E2E8F0',
-      mb: 2.5
-    }}
-  >
-    <Typography
-      variant="caption"
-      sx={{
-        color: '#64748B',
-        fontWeight: 700,
-        fontSize: '0.7rem',
-        letterSpacing: 0.8,
-        textTransform: 'uppercase',
-        display: 'block',
-        mb: 1.5
-      }}
-    >
-      Active Filters
-    </Typography>
-    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-      {[
-        {
-          key: 'State',
-          val: selectedState,
-          clear: () => handleClearSearch('state'),
-          color: '#1E40AF',
-          bg: '#EFF6FF'
-        },
-        {
-          key: 'City',
-          val: selectedCity,
-          clear: () => handleClearSearch('city'),
-          color: '#065F46',
-          bg: '#ECFDF5'
-        },
-        {
-          key: 'Associated',
-          val: searchAssociatedWith,
-          clear: () => handleClearSearch('associated'),
-          color: '#7C3AED',
-          bg: '#F3E8FF'
-        },
-        {
-          key: 'Official Email',
-          val: searchEmailOfficial,
-          clear: () => handleClearSearch('emailOfficial'),
-          color: '#C026D3',
-          bg: '#FDF4FF'
-        },
-        {
-          key: 'Banker',
-          val: searchBanker,
-          clear: () => handleClearSearch('banker'),
-          color: '#DC2626',
-          bg: '#FEF2F2'
-        }
-      ]
-        .filter((f) => f.val)
-        .map((f) => (
-          <Chip
-            key={f.key}
-            label={`${f.key}: ${f.val}`}
-            onDelete={f.clear}
-            size="small"
-            sx={{
-              bgcolor: f.bg,
-              color: f.color,
-              border: `1.5px solid ${f.color}33`,
-              borderRadius: 2.5,
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              height: 32,
-              transition: 'all 0.2s ease',
-              '& .MuiChip-deleteIcon': {
-                color: f.color,
-                fontSize: 16,
-                '&:hover': {
-                  color: f.color,
-                  opacity: 0.7
-                }
-              },
-              '&:hover': {
-                transform: 'scale(1.05)',
-                boxShadow: `0 4px 12px ${f.color}33`
-              }
-            }}
-          />
-        ))}
-      {![
-        selectedState,
-        selectedCity,
-        searchAssociatedWith,
-        searchEmailOfficial,
-        searchBanker
-      ].some(Boolean) && (
-        <Typography
-          variant="body2"
-          sx={{
-            color: '#94A3B8',
-            fontSize: '0.85rem',
-            fontStyle: 'italic'
-          }}
-        >
-          No active filters
-        </Typography>
-      )}
-    </Stack>
-  </Box>
-
-  {/* Action Buttons */}
-  <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5}>
-    {[
-      selectedState,
-      selectedCity,
-      searchAssociatedWith,
-      searchEmailOfficial,
-      searchBanker
-    ].some(Boolean) && (
-      <Button
-        size="small"
-        startIcon={<ClearAllIcon sx={{ fontSize: 16 }} />}
-        onClick={handleClearAll}
-        sx={{
-          textTransform: 'none',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          color: '#64748B',
-          borderRadius: 2.5,
-          px: 2,
-          py: 1,
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            bgcolor: '#F1F5F9',
-            color: '#475569'
-          }
-        }}
-      >
-        Clear All
-      </Button>
-    )}
-    <Box flex={1} />
-    <Button
-      size="small"
-      variant="contained"
-      onClick={handleCloseFilterPopover}
-      sx={{
-        textTransform: 'none',
-        fontSize: '0.85rem',
-        fontWeight: 700,
-        borderRadius: 3,
-        px: 3,
-        py: 1.2,
-        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-        boxShadow: '0 4px 16px rgba(79,70,229,0.3)',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          background: 'linear-gradient(135deg, #4338CA 0%, #6D28D9 100%)',
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 20px rgba(79,70,229,0.4)'
-        }
-      }}
-    >
-      Apply Filters
-    </Button>
-  </Box>
-</Popover>
-      {/* Content */}
-      <Grid container spacing={2}>
-        {/* GRID VIEW */}
-   {viewMode === 'grid' && (
-  <>
-    {gridItems.map((banker) => (
-      <Grid item xs={12} sm={12} md={6} lg={6} key={banker._id}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2.4,
-            pt: 3.2,
-            borderRadius: 4,
-            height: '100%',
-            background: 'linear-gradient(145deg, #ffffff 0%, #fafbff 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            border: '1px solid #E2E8F0',
-            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-            overflow: 'hidden',
-            position: 'relative',
-            '&:hover': {
-              transform: 'translateY(-6px)',
-              boxShadow: '0 18px 40px rgba(79,70,229,0.12)',
-              borderColor: '#C7D2FE',
-              '& .action-buttons': {
-                opacity: 1,
-                transform: 'translateY(0)'
-              }
-            }
-          }}
-        >
-          {/* Decorative gradient top */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 5,
-              background:
-                'linear-gradient(90deg, #4F46E5 0%, #EC4899 50%, #06B6D4 100%)',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16
-            }}
-          />
-
-          {/* Header */}
-          <Box
-            display="flex"
-            alignItems="center"
-            mb={2}
-            sx={{ mt: -0.5 }}
-          >
-            <Avatar
-              sx={{
-                bgcolor: 'transparent',
-                background:
-                  'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%)',
-                color: '#fff',
-                mr: 2,
-                width: 48,
-                height: 48,
-                fontSize: 20,
-                fontWeight: 800,
-                boxShadow: '0 10px 28px rgba(99,102,241,0.22)',
-                border: '2px solid rgba(255,255,255,0.4)'
-              }}
-            >
-              {banker.bankerName?.charAt(0)?.toUpperCase() || 'B'}
-            </Avatar>
-            <Box flex={1}>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: '#0F172A',
-                  fontWeight: 800,
-                  fontSize: '1.05rem',
-                  mb: 0.2,
-                  lineHeight: 1.25
-                }}
-              >
-                {banker.bankerName}
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: '#64748B',
-                  fontWeight: 600,
-                  fontSize: '0.8rem'
-                }}
-              >
-                {banker.associatedWith}
-              </Typography>
-            </Box>
           </Box>
+        </Box>
 
-          <Divider sx={{ mb: 2, borderColor: '#E2E8F0', opacity: 0.6 }} />
-
-        
-  <Box mb={1}>
-  <Stack direction="row" spacing={3} alignItems="center">
-
-   
-
-    {/* CITY */}
-    {banker.city && (
-      <Stack spacing={0.6}>
-        <Typography
-          sx={{
-            color: '#64748B',
-                fontWeight: 800,
-                fontSize: 10,
-                letterSpacing: 1,
-                mb: 0.2
-          }}
-        >
-          Location
-        </Typography>
-
-        <Chip
-          label={banker.city}
-          size="small"
-          sx={{
-            height: 24,
-            borderRadius: '10px',
-            '& .MuiChip-label': {
-              px: 1.2,
-              fontSize: 12,
-              fontWeight: 600
-            },
-            color: '#047857',
-            border: '1px solid #A7F3D0',
-            bgcolor: '#ECFDF5'
-          }}
-        />
-      </Stack>
-    )}
-
-  </Stack>
-</Box>
-
-
-
-
-          {/* Products */}
-          <Box mb={1.6}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: '#64748B',
-                fontWeight: 800,
-                fontSize: 10,
-                letterSpacing: 1,
-                mb: 0.7
-              }}
-            >
-              PRODUCTS OFFERED
-            </Typography>
-            <Tooltip
-              title={(banker.product || []).join(', ') || '-'}
-              arrow
-              placement="top"
-            >
-              <Box>
-                <ProductChipGroup items={banker.product || []} max={5} />
-              </Box>
-            </Tooltip>
-          </Box>
-
-          {/* Contact box */}
-          <Box mb={1}>
-            <Box
-              sx={{
-                p: 1.7,
-                borderRadius: 2.5,
-                border: '1.3px solid #E0E7FF',
-                bgcolor: '#FAFBFF',
-                boxShadow: '0 2px 6px rgba(99,102,241,0.03)'
-              }}
-            >
-              {/* Official Email */}
-              <Box mb={1.2}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#64748B',
-                    fontWeight: 800,
-                    fontSize: 9,
-                    letterSpacing: 0.8,
-                    display: 'block',
-                    mb: 0.4
-                  }}
-                >
-                  OFFICIAL EMAIL
-                </Typography>
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap={1}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#0F172A',
-                      fontWeight: 600,
-                      fontSize: '0.82rem',
-                      wordBreak: 'break-all',
-                      flex: 1
-                    }}
-                  >
-                    {banker.emailOfficial || '-'}
-                  </Typography>
-                  <IconButton
-                    aria-label="copy-official"
-                    size="small"
-                    onClick={() => handleCopy(banker.emailOfficial)}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: '1.3px solid #C7D2FE',
-                      color: '#6366F1',
-                      width: 30,
-                      height: 30,
-                      borderRadius: 2,
-                      '&:hover': {
-                        bgcolor: '#6366F1',
-                        color: '#FFFFFF',
-                        transform: 'scale(1.05)'
-                      }
-                    }}
-                  >
-                    <ContentCopyIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Box>
-              </Box>
-
-              {/* Personal Email */}
-              {banker.emailPersonal && (
-                <Box mb={1.2}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: '#64748B',
-                      fontWeight: 800,
-                      fontSize: 9,
-                      letterSpacing: 0.8,
-                      display: 'block',
-                      mb: 0.4
-                    }}
-                  >
-                    PERSONAL EMAIL
-                  </Typography>
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    gap={1}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#0F172A',
-                        fontWeight: 600,
-                        fontSize: '0.82rem',
-                        wordBreak: 'break-all',
-                        flex: 1
-                      }}
-                    >
-                      {banker.emailPersonal}
-                    </Typography>
-                    <IconButton
-                      aria-label="copy-personal"
-                      size="small"
-                      onClick={() =>
-                        handleCopy(banker.emailPersonal as string)
-                      }
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        border: '1.3px solid #DDD6FE',
-                        color: '#8B5CF6',
-                        width: 30,
-                        height: 30,
-                        borderRadius: 2,
-                        '&:hover': {
-                          bgcolor: '#8B5CF6',
-                          color: '#FFFFFF',
-                          transform: 'scale(1.05)'
-                        }
-                      }}
-                    >
-                      <ContentCopyIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
-              )}
-
-              {/* Contact Number */}
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#64748B',
-                    fontWeight: 800,
-                    fontSize: 9,
-                    letterSpacing: 0.8,
-                    display: 'block',
-                    mb: 0.4
-                  }}
-                >
-                  CONTACT NUMBER
-                </Typography>
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap={1}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#0F172A',
-                      fontWeight: 700,
-                      fontSize: '0.86rem',
-                      fontFamily: 'monospace'
-                    }}
-                  >
-                    {banker.contact || '-'}
-                  </Typography>
-                  <IconButton
-                    aria-label="copy-contact"
-                    size="small"
-                    onClick={() => handleCopy(banker.contact)}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: '1.3px solid #A7F3D0',
-                      color: '#10B981',
-                      width: 30,
-                      height: 30,
-                      borderRadius: 2,
-                      '&:hover': {
-                        bgcolor: '#10B981',
-                        color: '#FFFFFF',
-                        transform: 'scale(1.05)'
-                      }
-                    }}
-                  >
-                    <ContentCopyIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-
-            {/* Action Buttons */}
-       
-              {isAdmin && (
-            <Box
-              className="action-buttons"
-              display="flex"
-              justifyContent="flex-end"
-              gap={1}
-              mt={2}
-              sx={{
-                opacity: 0.7,
-                transform: 'translateY(4px)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <Tooltip title="Edit Banker" arrow>
-                <IconButton
-                  onClick={() => handleEdit(banker)}
-                  size="small"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 3,
-                    background:
-                      'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)',
-                    color: '#fff',
-                    boxShadow: '0 8px 18px rgba(79,70,229,0.25)',
-                    '&:hover': {
-                      transform: 'scale(1.06)',
-                      boxShadow: '0 12px 26px rgba(79,70,229,0.35)'
-                    }
-                  }}
-                >
-                  <EditOutlinedIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Delete Banker" arrow>
-                <IconButton
-                  onClick={() => handleDelete(banker._id)}
-                  size="small"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 3,
-                    border: '2px solid #FCA5A5',
-                    color: '#EF4444',
-                    bgcolor: '#FEF2F2',
-                    '&:hover': {
-                      bgcolor: '#EF4444',
-                      color: '#FFFFFF',
-                      transform: 'scale(1.06)',
-                      borderColor: '#EF4444'
-                    }
-                  }}
-                >
-                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )}
-        </Paper>
-      </Grid>
-    ))}
-
-    {filteredBankers.length === 0 && (
-      <Grid item xs={12}>
+        {/* Active Filters Section */}
         <Box
           sx={{
-            textAlign: 'center',
-            py: 6,
-            px: 3,
-            bgcolor: '#FAFBFF',
-            borderRadius: 4,
-            border: '2px dashed #E0E7FF'
+            bgcolor: '#F8FAFC',
+            borderRadius: 3,
+            p: 2,
+            border: '1.5px solid #E2E8F0',
+            mb: 2.5
           }}
         >
           <Typography
-            variant="h6"
-            sx={{ color: '#64748B', fontWeight: 600, mb: 1 }}
+            variant="caption"
+            sx={{
+              color: '#64748B',
+              fontWeight: 700,
+              fontSize: '0.7rem',
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+              display: 'block',
+              mb: 1.5
+            }}
           >
-            No bankers found
+            Active Filters
           </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-            No bankers match your search criteria.
-          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+            {[
+              {
+                key: 'State',
+                val: selectedState,
+                clear: () => handleClearSearch('state'),
+                color: '#1E40AF',
+                bg: '#EFF6FF'
+              },
+              {
+                key: 'City',
+                val: selectedCity,
+                clear: () => handleClearSearch('city'),
+                color: '#065F46',
+                bg: '#ECFDF5'
+              },
+              {
+                key: 'Associated',
+                val: searchAssociatedWith,
+                clear: () => handleClearSearch('associated'),
+                color: '#7C3AED',
+                bg: '#F3E8FF'
+              },
+              {
+                key: 'Official Email',
+                val: searchEmailOfficial,
+                clear: () => handleClearSearch('emailOfficial'),
+                color: '#C026D3',
+                bg: '#FDF4FF'
+              },
+              {
+                key: 'Banker',
+                val: searchBanker,
+                clear: () => handleClearSearch('banker'),
+                color: '#DC2626',
+                bg: '#FEF2F2'
+              }
+            ]
+              .filter((f) => f.val)
+              .map((f) => (
+                <Chip
+                  key={f.key}
+                  label={`${f.key}: ${f.val}`}
+                  onDelete={f.clear}
+                  size="small"
+                  sx={{
+                    bgcolor: f.bg,
+                    color: f.color,
+                    border: `1.5px solid ${f.color}33`,
+                    borderRadius: 2.5,
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    height: 32,
+                    transition: 'all 0.2s ease',
+                    '& .MuiChip-deleteIcon': {
+                      color: f.color,
+                      fontSize: 16,
+                      '&:hover': {
+                        color: f.color,
+                        opacity: 0.7
+                      }
+                    },
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      boxShadow: `0 4px 12px ${f.color}33`
+                    }
+                  }}
+                />
+              ))}
+            {![selectedState, selectedCity, searchAssociatedWith, searchEmailOfficial, searchBanker].some(Boolean) && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#94A3B8',
+                  fontSize: '0.85rem',
+                  fontStyle: 'italic'
+                }}
+              >
+                No active filters
+              </Typography>
+            )}
+          </Stack>
         </Box>
-      </Grid>
-    )}
-  </>
-)}     {/* TABLE VIEW */}
+
+        {/* Action Buttons */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1.5}>
+          {[selectedState, selectedCity, searchAssociatedWith, searchEmailOfficial, searchBanker].some(Boolean) && (
+            <Button
+              size="small"
+              startIcon={<ClearAllIcon sx={{ fontSize: 16 }} />}
+              onClick={handleClearAll}
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                color: '#64748B',
+                borderRadius: 2.5,
+                px: 2,
+                py: 1,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: '#F1F5F9',
+                  color: '#475569'
+                }
+              }}
+            >
+              Clear All
+            </Button>
+          )}
+          <Box flex={1} />
+          <Button
+            size="small"
+            variant="contained"
+            onClick={handleCloseFilterPopover}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              borderRadius: 3,
+              px: 3,
+              py: 1.2,
+              background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+              boxShadow: '0 4px 16px rgba(79,70,229,0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #4338CA 0%, #6D28D9 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(79,70,229,0.4)'
+              }
+            }}
+          >
+            Apply Filters
+          </Button>
+        </Box>
+      </Popover>
+
+      {/* Content */}
+      <Grid container spacing={2}>
+        {/* GRID VIEW */}
+        {viewMode === 'grid' && (
+          <>
+            {gridItems.map((banker) => (
+              <Grid item xs={12} sm={12} md={6} lg={6} key={banker._id}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2.4,
+                    pt: 3.2,
+                    borderRadius: 4,
+                    height: '100%',
+                    background: 'linear-gradient(145deg, #ffffff 0%, #fafbff 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    border: '1px solid #E2E8F0',
+                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    '&:hover': {
+                      transform: 'translateY(-6px)',
+                      boxShadow: '0 18px 40px rgba(79,70,229,0.12)',
+                      borderColor: '#C7D2FE',
+                      '& .action-buttons': {
+                        opacity: 1,
+                        transform: 'translateY(0)'
+                      }
+                    }
+                  }}
+                >
+                  {/* Decorative gradient top */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 5,
+                      background:
+                        'linear-gradient(90deg, #4F46E5 0%, #EC4899 50%, #06B6D4 100%)',
+                      borderTopLeftRadius: 16,
+                      borderTopRightRadius: 16
+                    }}
+                  />
+
+                  {/* Header */}
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    mb={2}
+                    sx={{ mt: -0.5 }}
+                  >
+                    <Avatar
+                      sx={{
+                        bgcolor: 'transparent',
+                        background:
+                          'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%)',
+                        color: '#fff',
+                        mr: 2,
+                        width: 48,
+                        height: 48,
+                        fontSize: 20,
+                        fontWeight: 800,
+                        boxShadow: '0 10px 28px rgba(99,102,241,0.22)',
+                        border: '2px solid rgba(255,255,255,0.4)'
+                      }}
+                    >
+                      {banker.bankerName?.charAt(0)?.toUpperCase() || 'B'}
+                    </Avatar>
+                    <Box flex={1}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: '#0F172A',
+                          fontWeight: 800,
+                          fontSize: '1.05rem',
+                          mb: 0.2,
+                          lineHeight: 1.25
+                        }}
+                      >
+                        {banker.bankerName}
+                      </Typography>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          color: '#64748B',
+                          fontWeight: 600,
+                          fontSize: '0.8rem'
+                        }}
+                      >
+                        {banker.associatedWith}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ mb: 2, borderColor: '#E2E8F0', opacity: 0.6 }} />
+
+                  <Box mb={1}>
+                    <Stack direction="row" spacing={3} alignItems="center">
+                      {/* CITY */}
+                      {banker.city && (
+                        <Stack spacing={0.6}>
+                          <Typography
+                            sx={{
+                              color: '#64748B',
+                              fontWeight: 800,
+                              fontSize: 10,
+                              letterSpacing: 1,
+                              mb: 0.2
+                            }}
+                          >
+                            Location
+                          </Typography>
+
+                          <Chip
+                            label={banker.city}
+                            size="small"
+                            sx={{
+                              height: 24,
+                              borderRadius: '10px',
+                              '& .MuiChip-label': {
+                                px: 1.2,
+                                fontSize: 12,
+                                fontWeight: 600
+                              },
+                              color: '#047857',
+                              border: '1px solid #A7F3D0',
+                              bgcolor: '#ECFDF5'
+                            }}
+                          />
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Box>
+
+                  {/* Products */}
+                  <Box mb={1.6}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        color: '#64748B',
+                        fontWeight: 800,
+                        fontSize: 10,
+                        letterSpacing: 1,
+                        mb: 0.7
+                      }}
+                    >
+                      PRODUCTS OFFERED
+                    </Typography>
+                    <Tooltip
+                      title={(banker.product || []).join(', ') || '-'}
+                      arrow
+                      placement="top"
+                    >
+                      <Box>
+                        <ProductChipGroup items={banker.product || []} max={5} />
+                      </Box>
+                    </Tooltip>
+                  </Box>
+
+                  {/* Contact box */}
+                  <Box mb={1}>
+                    <Box
+                      sx={{
+                        p: 1.7,
+                        borderRadius: 2.5,
+                        border: '1.3px solid #E0E7FF',
+                        bgcolor: '#FAFBFF',
+                        boxShadow: '0 2px 6px rgba(99,102,241,0.03)'
+                      }}
+                    >
+                      {/* Official Email */}
+                      <Box mb={1.2}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#64748B',
+                            fontWeight: 800,
+                            fontSize: 9,
+                            letterSpacing: 0.8,
+                            display: 'block',
+                            mb: 0.4
+                          }}
+                        >
+                          OFFICIAL EMAIL
+                        </Typography>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space_between"
+                          gap={1}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#0F172A',
+                              fontWeight: 600,
+                              fontSize: '0.82rem',
+                              wordBreak: 'break-all',
+                              flex: 1
+                            }}
+                          >
+                            {banker.emailOfficial || '-'}
+                          </Typography>
+                          <IconButton
+                            aria-label="copy-official"
+                            size="small"
+                            onClick={() => handleCopy(banker.emailOfficial)}
+                            sx={{
+                              bgcolor: '#FFFFFF',
+                              border: '1.3px solid #C7D2FE',
+                              color: '#6366F1',
+                              width: 30,
+                              height: 30,
+                              borderRadius: 2,
+                              '&:hover': {
+                                bgcolor: '#6366F1',
+                                color: '#FFFFFF',
+                                transform: 'scale(1.05)'
+                              }
+                            }}
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+
+                      {/* Personal Email */}
+                      {banker.emailPersonal && (
+                        <Box mb={1.2}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: '#64748B',
+                              fontWeight: 800,
+                              fontSize: 9,
+                              letterSpacing: 0.8,
+                              display: 'block',
+                              mb: 0.4
+                            }}
+                          >
+                            PERSONAL EMAIL
+                          </Typography>
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            gap={1}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#0F172A',
+                                fontWeight: 600,
+                                fontSize: '0.82rem',
+                                wordBreak: 'break-all',
+                                flex: 1
+                              }}
+                            >
+                              {banker.emailPersonal}
+                            </Typography>
+                            <IconButton
+                              aria-label="copy-personal"
+                              size="small"
+                              onClick={() =>
+                                handleCopy(banker.emailPersonal as string)
+                              }
+                              sx={{
+                                bgcolor: '#FFFFFF',
+                                border: '1.3px solid #DDD6FE',
+                                color: '#8B5CF6',
+                                width: 30,
+                                height: 30,
+                                borderRadius: 2,
+                                '&:hover': {
+                                  bgcolor: '#8B5CF6',
+                                  color: '#FFFFFF',
+                                  transform: 'scale(1.05)'
+                                }
+                              }}
+                            >
+                              <ContentCopyIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Contact Number */}
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#64748B',
+                            fontWeight: 800,
+                            fontSize: 9,
+                            letterSpacing: 0.8,
+                            display: 'block',
+                            mb: 0.4
+                          }}
+                        >
+                          CONTACT NUMBER
+                        </Typography>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          gap={1}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#0F172A',
+                              fontWeight: 700,
+                              fontSize: '0.86rem',
+                              fontFamily: 'monospace'
+                            }}
+                          >
+                            {banker.contact || '-'}
+                          </Typography>
+                          <IconButton
+                            aria-label="copy-contact"
+                            size="small"
+                            onClick={() => handleCopy(banker.contact)}
+                            sx={{
+                              bgcolor: '#FFFFFF',
+                              border: '1.3px solid #A7F3D0',
+                              color: '#10B981',
+                              width: 30,
+                              height: 30,
+                              borderRadius: 2,
+                              '&:hover': {
+                                bgcolor: '#10B981',
+                                color: '#FFFFFF',
+                                transform: 'scale(1.05)'
+                              }
+                            }}
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Action Buttons */}
+                  {isAdmin && (
+                    <Box
+                      className="action-buttons"
+                      display="flex"
+                      justifyContent="flex-end"
+                      gap={1}
+                      mt={2}
+                      sx={{
+                        opacity: 0.7,
+                        transform: 'translateY(4px)',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Tooltip title="Edit Banker" arrow>
+                        <IconButton
+                          onClick={() => handleEdit(banker)}
+                          size="small"
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 3,
+                            background:
+                              'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)',
+                            color: '#fff',
+                            boxShadow: '0 8px 18px rgba(79,70,229,0.25)',
+                            '&:hover': {
+                              transform: 'scale(1.06)',
+                              boxShadow: '0 12px 26px rgba(79,70,229,0.35)'
+                            }
+                          }}
+                        >
+                          <EditOutlinedIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Delete Banker" arrow>
+                        <IconButton
+                          onClick={() => handleDelete(banker._id)}
+                          size="small"
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 3,
+                            border: '2px solid #FCA5A5',
+                            color: '#EF4444',
+                            bgcolor: '#FEF2F2',
+                            '&:hover': {
+                              bgcolor: '#EF4444',
+                              color: '#FFFFFF',
+                              transform: 'scale(1.06)',
+                              borderColor: '#EF4444'
+                            }
+                          }}
+                        >
+                          <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+            ))}
+
+            {filteredBankers.length === 0 && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    py: 6,
+                    px: 3,
+                    bgcolor: '#FAFBFF',
+                    borderRadius: 4,
+                    border: '2px dashed #E0E7FF'
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{ color: '#64748B', fontWeight: 600, mb: 1 }}
+                  >
+                    No bankers found
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                    No bankers match your search criteria.
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+          </>
+        )}
+
+        {/* TABLE VIEW */}
         {viewMode === 'table' && (
           <Grid item xs={12}>
             <Paper
@@ -1624,8 +1678,7 @@ const handleSaveChanges = async () => {
                         Personal Email
                       </TableCell>
                       <TableCell sx={{ minWidth: 160 }}>Contact</TableCell>
-                      
-                  {isAdmin && (
+                      {isAdmin && (
                         <TableCell sx={{ minWidth: 120 }}>Actions</TableCell>
                       )}
                     </TableRow>
@@ -1862,66 +1915,65 @@ const handleSaveChanges = async () => {
                         </TableCell>
 
                         {/* Actions */}
+                        {isAdmin && (
+                          <TableCell sx={{ py: 1.1 }}>
+                            <Box
+                              className="action-buttons"
+                              display="flex"
+                              justifyContent="flex-end"
+                              gap={1}
+                              sx={{
+                                opacity: 0.9,
+                                transition: 'all 0.3s ease'
+                              }}
+                            >
+                              <Tooltip title="Edit Banker" arrow>
+                                <IconButton
+                                  onClick={() => handleEdit(b)}
+                                  size="small"
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 2,
+                                    background:
+                                      'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)',
+                                    color: '#fff',
+                                    boxShadow: '0 4px 12px rgba(79,70,229,0.25)',
+                                    '&:hover': {
+                                      transform: 'scale(1.06)',
+                                      boxShadow: '0 8px 18px rgba(79,70,229,0.35)'
+                                    }
+                                  }}
+                                >
+                                  <EditOutlinedIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
 
-                   {isAdmin && (
-            <Box
-              className="action-buttons"
-              display="flex"
-              justifyContent="flex-end"
-              gap={1}
-              mt={2}
-              sx={{
-                opacity: 0.7,
-                transform: 'translateY(4px)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <Tooltip title="Edit Banker" arrow>
-                <IconButton
-                  onClick={() => handleEdit(b)}
-                  size="small"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 3,
-                    background:
-                      'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)',
-                    color: '#fff',
-                    boxShadow: '0 8px 18px rgba(79,70,229,0.25)',
-                    '&:hover': {
-                      transform: 'scale(1.06)',
-                      boxShadow: '0 12px 26px rgba(79,70,229,0.35)'
-                    }
-                  }}
-                >
-                  <EditOutlinedIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Delete Banker" arrow>
-                <IconButton
-                  onClick={() => handleDelete(b._id)}
-                  size="small"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 3,
-                    border: '2px solid #FCA5A5',
-                    color: '#EF4444',
-                    bgcolor: '#FEF2F2',
-                    '&:hover': {
-                      bgcolor: '#EF4444',
-                      color: '#FFFFFF',
-                      transform: 'scale(1.06)',
-                      borderColor: '#EF4444'
-                    }
-                  }}
-                >
-                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )}
+                              <Tooltip title="Delete Banker" arrow>
+                                <IconButton
+                                  onClick={() => handleDelete(b._id)}
+                                  size="small"
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 2,
+                                    border: '2px solid #FCA5A5',
+                                    color: '#EF4444',
+                                    bgcolor: '#FEF2F2',
+                                    '&:hover': {
+                                      bgcolor: '#EF4444',
+                                      color: '#FFFFFF',
+                                      transform: 'scale(1.06)',
+                                      borderColor: '#EF4444'
+                                    }
+                                  }}
+                                >
+                                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
 
@@ -2039,6 +2091,8 @@ const handleSaveChanges = async () => {
               onSuccess={() => {
                 setOpenFormModal(false);
                 setPage(1);
+                  setRefreshKey(x => x + 1);
+
               }}
             />
           </DialogContent>
@@ -2177,24 +2231,13 @@ const handleSaveChanges = async () => {
         />
       </Grid>
 
-      {/* Snackbar */}
-      <Snackbar
+      {/* Custom Snackbar */}
+      <CustomSnackbar
         open={snack.open}
-        autoHideDuration={2000}
+        message={snack.msg}
+        severity={snack.severity}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center'
-        }}
-      >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        >
-          {snack.msg}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 };
@@ -2203,29 +2246,27 @@ const LendersTasks = () => {
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-  const getUserRole = (): string | null => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
+    const getUserRole = (): string | null => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
 
-      const decoded: any = jwtDecode(token);
+        const decoded: any = jwtDecode(token);
 
-      console.log('🔐 Full decoded token =>', decoded);
-      console.log('🎭 Role from token =>', decoded.role);
+        console.log('🔐 Full decoded token =>', decoded);
+        console.log('🎭 Role from token =>', decoded.role);
 
-      return decoded.role ?? null;
-    } catch (err) {
-      console.error('❌ JWT Decode Failed:', err);
-      return null;
-    }
-  };
+        return decoded.role ?? null;
+      } catch (err) {
+        console.error('❌ JWT Decode Failed:', err);
+        return null;
+      }
+    };
 
-  const r = getUserRole();
-  console.log('🧾 Setting role state to =>', r);
-  setRole(r);
-}, []);
-
-  
+    const r = getUserRole();
+    console.log('🧾 Setting role state to =>', r);
+    setRole(r);
+  }, []);
 
   return (
     <>

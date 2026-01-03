@@ -16,11 +16,11 @@ import {
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Navbar from '../../src/content/Overview/Navbar';
-import Footer from '../../src/content/Overview/Footer';
+import LogoNavbar from '../../src/content/Overview/Navbar/navbar1';
+import MinimalFooter from '@/content/Overview/Footer/footer';
 
 // ===== Styled =====
-const PageShell = styled(Box)(({  }) => ({
+const PageShell = styled(Box)(() => ({
   minHeight: '100vh',
   background:
     'radial-gradient(circle at top left, #1d4ed8 0, transparent 45%), radial-gradient(circle at top right, #0ea5e9 0, transparent 50%), radial-gradient(circle at bottom, #020617 0, #020617 55%)',
@@ -43,7 +43,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   color: '#f9fafb'
 }));
 
-const SectionSub = styled(Typography)(({  }) => ({
+const SectionSub = styled(Typography)(() => ({
   textAlign: 'center',
   color: alpha('#e5e7eb', 0.7),
   maxWidth: 640,
@@ -58,7 +58,10 @@ const Card = styled(Paper)(({ theme }) => ({
     'radial-gradient(circle at top left, rgba(15,23,42,0.96), rgba(15,23,42,1))',
   border: `1px solid ${alpha('#60a5fa', 0.25)}`,
   boxShadow: '0 18px 40px rgba(15,23,42,0.9)',
-  color: '#e5e7eb'
+  color: '#e5e7eb',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column'
 }));
 
 const PremiumCard = styled(Paper)(({ theme }) => ({
@@ -145,8 +148,6 @@ const getTags = (b: DirectoryBanker): string[] => {
 const PAYU_LINK =
   'https://payu.in/invoice/97808E255BB5C97B00C27853C60CFDC67E7188F585220534625FAFB9C5BA7A91/E4C8E54A2C922F54180E364247224ED0';
 
-
-
 // Display vs link version
 const WHATSAPP_NUMBER_DISPLAY = '+91 88106 00135';
 const WHATSAPP_NUMBER_LINK = '918810600135';
@@ -180,14 +181,12 @@ const DirectoryPreviewPage: React.FC = () => {
     fetchDirectories();
   }, []);
 
-  // one real banker visible
-  const visibleBankers = bankers.slice(0, 1);
-  const totalCards = 6;
-  const lockedCount = Math.max(totalCards - visibleBankers.length, 0);
+  // max 2 real bankers visible
+  const visibleBankers = bankers.slice(0, 2);
 
   return (
     <>
-      <Navbar />
+      <LogoNavbar />
       <PageShell>
         <Section>
           <Container maxWidth="lg">
@@ -196,10 +195,9 @@ const DirectoryPreviewPage: React.FC = () => {
                 Preview the F2 Banker Directory
               </SectionTitle>
               <SectionSub>
-                The first card below is a <b>real banker profile</b> fetched
-                directly from our database. The remaining cards are locked
-                previews – you&apos;ll unlock full access, contacts and filters
-                once you upgrade to F2 Directory Premium.
+                The first few cards below are <b>real banker profiles</b> fetched
+                directly from our database. The Premium card shows what you unlock
+                when you upgrade to F2 Directory Premium.
               </SectionSub>
 
               {loading && (
@@ -210,13 +208,13 @@ const DirectoryPreviewPage: React.FC = () => {
                     color: alpha('#e5e7eb', 0.7)
                   }}
                 >
-                  Loading a live banker snapshot…
+                  Loading live banker snapshots…
                 </Typography>
               )}
             </Box>
 
             <Grid container spacing={3}>
-              {/* ✅ Real card – full DB-based layout */}
+              {/* ✅ Real cards – full DB-based layout (max 2) */}
               {visibleBankers.map((b, idx) => {
                 const cityArr = toArray(b.city);
                 const stateArr = toArray(b.state);
@@ -235,15 +233,13 @@ const DirectoryPreviewPage: React.FC = () => {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: idx * 0.05 }}
+                      style={{ height: '100%' }}
                     >
                       <Card
                         sx={{
                           background: getGradient(
                             colorPalette[idx % colorPalette.length]
-                          ),
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 1.2
+                          )
                         }}
                       >
                         {/* Name + Associated With */}
@@ -277,7 +273,8 @@ const DirectoryPreviewPage: React.FC = () => {
                           <Typography
                             sx={{
                               fontSize: 12.5,
-                              color: '#9ca3af'
+                              color: '#9ca3af',
+                              mb: 1
                             }}
                           >
                             📍 {location}
@@ -285,7 +282,7 @@ const DirectoryPreviewPage: React.FC = () => {
                         )}
 
                         {/* Contact + Emails */}
-                        <Stack spacing={0.4}>
+                        <Stack spacing={0.4} sx={{ mb: 1 }}>
                           {b.contact && (
                             <Typography
                               sx={{
@@ -326,7 +323,7 @@ const DirectoryPreviewPage: React.FC = () => {
                             direction="row"
                             spacing={1}
                             flexWrap="wrap"
-                            sx={{ mt: 0.8 }}
+                            sx={{ mb: 1 }}
                           >
                             {tags.map((tag) => (
                               <Chip
@@ -347,6 +344,9 @@ const DirectoryPreviewPage: React.FC = () => {
                           </Stack>
                         )}
 
+                        {/* Spacer to push content to bottom */}
+                        <Box sx={{ flexGrow: 1 }} />
+
                         {/* Note */}
                         <Typography
                           sx={{
@@ -355,131 +355,170 @@ const DirectoryPreviewPage: React.FC = () => {
                             color: alpha('#e5e7eb', 0.8)
                           }}
                         >
-                          🔓 This is a real banker profile preview from the live
-                          F2 Directory. Internal contact details
-                          unlock in the Premium version.
+                          🔓 Live banker profile preview from F2 Directory.
                         </Typography>
+
+                        {/* 👇 CTA button – same design language */}
+                        <Button
+                          size="small"
+                          sx={{
+                            mt: 1,
+                            alignSelf: 'flex-start',
+                            borderRadius: 999,
+                            textTransform: 'none',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            px: 2.4,
+                            py: 0.6,
+                            background:
+                              'linear-gradient(135deg, #4ade80, #22c55e)',
+                            color: '#022c22',
+                            boxShadow: '0 8px 18px rgba(34,197,94,0.35)',
+                            '&:hover': {
+                              background:
+                                'linear-gradient(135deg, #22c55e, #4ade80)',
+                              boxShadow: '0 10px 22px rgba(34,197,94,0.45)'
+                            }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open('/onlineform/form-online', '_blank');
+                          }}
+                        >
+                          You can also add your profile
+                        </Button>
                       </Card>
                     </motion.div>
                   </Grid>
                 );
               })}
 
-              {/* 🔒 Locked preview cards (Premium) */}
-              {Array.from({ length: lockedCount }).map((_, i) => {
-                const idx = visibleBankers.length + i;
-                return (
-                  <Grid item xs={12} sm={6} md={4} key={`locked-${idx}`}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: idx * 0.05 }}
+              {/* ⭐ Single Premium teaser card */}
+              <Grid item xs={12} sm={6} md={4}>
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.25 }}
+                  style={{ height: '100%' }}
+                >
+                  <Card
+                    sx={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      background:
+                        'radial-gradient(circle at top, rgba(250,204,21,0.18), rgba(15,23,42,1))',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      window.open(PAYU_LINK, '_blank');
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        background:
+                          'linear-gradient(135deg, rgba(15,23,42,0.4), rgba(15,23,42,0.95))',
+                        pointerEvents: 'none'
+                      }}
+                    />
+
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        zIndex: 1
+                      }}
                     >
-                      <Card
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                        <LockOutlinedIcon
+                          sx={{
+                            fontSize: 26,
+                            color: '#facc15'
+                          }}
+                        />
+                        <Chip
+                          label="Premium Access"
+                          size="small"
+                          sx={{
+                            borderRadius: 999,
+                            height: 22,
+                            fontSize: 10,
+                            background: 'rgba(250,204,21,0.18)',
+                            color: '#facc15',
+                            borderColor: 'rgba(250,204,21,0.7)'
+                          }}
+                          variant="outlined"
+                        />
+                      </Stack>
+
+                      <Typography
                         sx={{
-                          background: getGradient(
-                            colorPalette[idx % colorPalette.length]
-                          ),
-                          position: 'relative',
-                          overflow: 'hidden',
-                          cursor: 'pointer'
+                          fontSize: 15.5,
+                          fontWeight: 700,
+                          color: '#fefce8',
+                          mb: 1
                         }}
-                        onClick={() => {
+                      >
+                        Unlock 500+ banker contacts across India
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          fontSize: 12.5,
+                          color: alpha('#e5e7eb', 0.9),
+                          mb: 1
+                        }}
+                      >
+                        View full names, direct calling numbers, official & personal
+                        emails, and product-wise coverage for every banker.
+                      </Typography>
+
+                      {/* Spacer to push button to bottom */}
+                      <Box sx={{ flexGrow: 1 }} />
+
+                      <Button
+                        size="small"
+                        sx={{
+                          mt: 1.8,
+                          borderRadius: 999,
+                          textTransform: 'none',
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          px: 2.4,
+                          py: 0.6,
+                          background:
+                            'linear-gradient(135deg, #facc15, #f97316)',
+                          color: '#0f172a',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(135deg, #f97316, #facc15)'
+                          }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           window.open(PAYU_LINK, '_blank');
                         }}
                       >
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            inset: 0,
-                            background:
-                              'linear-gradient(135deg, rgba(15,23,42,0.4), rgba(15,23,42,0.95))',
-                            backdropFilter: 'blur(5px)'
-                          }}
-                        />
+                        Pay & unlock full directory
+                      </Button>
 
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            textAlign: 'center',
-                            py: 2,
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <LockOutlinedIcon
-                            sx={{
-                              fontSize: 32,
-                              mb: 1,
-                              color: '#facc15'
-                            }}
-                          />
-
-                          <Typography
-                            sx={{
-                              fontSize: 13.5,
-                              fontWeight: 600,
-                              mb: 0.5,
-                              color: '#fefce8'
-                            }}
-                          >
-                            Premium banker profile locked
-                          </Typography>
-
-                          <Typography
-                            sx={{
-                              fontSize: 11.5,
-                              color: '#e5e7eb',
-                              mb: 1.5,
-                              px: 1.5
-                            }}
-                          >
-                            Full name, bank, city, product focus, phone numbers
-                            and contact emails are available only after you
-                            complete the premium payment.
-                          </Typography>
-
-                          <Chip
-                            icon={<LockOutlinedIcon sx={{ fontSize: 14 }} />}
-                            label="Click to pay & unlock Premium"
-                            size="small"
-                            sx={{
-                              height: 26,
-                              borderRadius: 999,
-                              fontSize: 11,
-                              background:
-                                'linear-gradient(135deg, #facc15, #f97316)',
-                              color: '#0f172a',
-                              '& .MuiChip-icon': {
-                                color: '#0f172a'
-                              }
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(PAYU_LINK, '_blank');
-                            }}
-                          />
-
-                          <Typography
-                            sx={{
-                              mt: 1.5,
-                              fontSize: 10.5,
-                              color: alpha('#e5e7eb', 0.8),
-                              px: 1.5
-                            }}
-                          >
-                            After successful payment, you&apos;ll receive your
-                            login ID and password on email. Use those details to
-                            log in and access the full directory.
-                          </Typography>
-                        </Box>
-                      </Card>
-                    </motion.div>
-                  </Grid>
-                );
-              })}
+                      <Typography
+                        sx={{
+                          mt: 1,
+                          fontSize: 10.5,
+                          color: alpha('#e5e7eb', 0.8)
+                        }}
+                      >
+                        After payment, your login ID & password will be shared on
+                        WhatsApp / email within a few hours.
+                      </Typography>
+                    </Box>
+                  </Card>
+                </motion.div>
+              </Grid>
             </Grid>
           </Container>
         </Section>
@@ -695,7 +734,7 @@ const DirectoryPreviewPage: React.FC = () => {
           </Container>
         </Box>
 
-        <Footer />
+        <MinimalFooter />
       </PageShell>
     </>
   );
