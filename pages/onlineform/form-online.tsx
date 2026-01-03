@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState } from 'react';
 import {
   TextField,
   Button,
@@ -147,11 +147,11 @@ const BankerDirectoryPublicForm = () => {
   };
 
   // -------- Desktop: Enter / Tab / , se add karna --------
-  const shouldAdd = (e: KeyboardEvent<HTMLInputElement>) =>
+  const shouldAdd = (e: React.KeyboardEvent) =>
     e.key === 'Enter' || e.key === 'Tab' || e.key === ',' || e.key === 'Unidentified';
 
   // yeh teen sirf desktop Autocomplete ke liye use honge
-  const handleStateKeyDown = (e: KeyboardEvent<HTMLInputElement>, value: string[]) => {
+  const handleStateKeyDown = (e: React.KeyboardEvent, value: string[]) => {
     if (!shouldAdd(e)) return;
     const input = (e.target as HTMLInputElement).value.trim();
     if (!input) return;
@@ -161,7 +161,7 @@ const BankerDirectoryPublicForm = () => {
     );
   };
 
-  const handleCityKeyDown = (e: KeyboardEvent<HTMLInputElement>, value: string[]) => {
+  const handleCityKeyDown = (e: React.KeyboardEvent, value: string[]) => {
     if (!shouldAdd(e)) return;
     const input = (e.target as HTMLInputElement).value.trim();
     if (!input) return;
@@ -171,7 +171,7 @@ const BankerDirectoryPublicForm = () => {
     );
   };
 
-  const handleProductKeyDown = (e: KeyboardEvent<HTMLInputElement>, value: string[]) => {
+  const handleProductKeyDown = (e: React.KeyboardEvent, value: string[]) => {
     if (!shouldAdd(e)) return;
     const input = (e.target as HTMLInputElement).value.trim();
     if (!input) return;
@@ -232,10 +232,6 @@ const BankerDirectoryPublicForm = () => {
     if (form.product.length === 0) {
       errors.push('Add at least one Product category');
     }
-    // 👉 Agar designation bhi required chahiye to uncomment karna:
-    // if (!form.lastCurrentDesignation.trim()) {
-    //   errors.push('Last / Current Designation is required');
-    // }
 
     if (errors.length > 0) {
       setError(errors.join(' | '));

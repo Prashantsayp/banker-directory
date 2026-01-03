@@ -21,22 +21,6 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
-/* -------- UI Tokens -------- */
-const COLORS = {
-  ink: '#0f172a',
-  blue: '#2563eb',
-};
-
-/* -------- Nav Link Style (kept, but not used now) -------- */
-const LinkBtn = styled(MuiLink)(() => ({
-  textDecoration: 'none',
-  fontWeight: 500,
-  fontSize: 14,
-  color: COLORS.ink,
-  padding: '6px 10px',
-  borderRadius: 999,
-  WebkitTapHighlightColor: 'transparent',
-}));
 
 /* -------- Sign Up Button -------- */
 const SignUpBtn = styled(Button)(() => ({
