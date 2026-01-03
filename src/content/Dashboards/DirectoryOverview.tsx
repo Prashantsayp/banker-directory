@@ -172,6 +172,9 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     severity: 'success'
   });
 
+  // 🔁 For force refresh after add / upload
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const debouncedLocation = useDebounce(searchLocation, 500);
   const debouncedBanker = useDebounce(searchBanker, 500);
   const debouncedAssociated = useDebounce(searchAssociatedWith, 500);
@@ -183,6 +186,20 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     setViewMode(storedView);
   }, []);
 
+  /* ---------- Filters active? ---------- */
+  const hasFilters = useMemo(
+    () =>
+      !!(
+        selectedState ||
+        selectedCity ||
+        searchLocation.trim() ||
+        searchAssociatedWith.trim() ||
+        searchEmailOfficial.trim() ||
+        searchBanker.trim()
+      ),
+    [selectedState, selectedCity, searchLocation, searchAssociatedWith, searchEmailOfficial, searchBanker]
+  );
+
   /* ---------- Tie State/City -> searchLocation ---------- */
   useEffect(() => {
     if (selectedCity) {
@@ -190,10 +207,9 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     } else if (selectedState) {
       setSearchLocation(selectedState);
     } else {
-      // if user cleared both state & city but typed something manually, don't override
-      // here we only reset if the searchLocation matches previous state/city pattern
-      // Keep simple: clear if we were driving it via state/city
-      setSearchLocation((prev) => (prev.includes(', ') || INDIA_STATES.includes(prev) ? '' : prev));
+      setSearchLocation((prev) =>
+        prev.includes(', ') || INDIA_STATES.includes(prev) ? '' : prev
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedState, selectedCity]);
@@ -214,7 +230,10 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         if (debouncedAssociated.trim()) params.associatedWith = debouncedAssociated.trim();
         if (debouncedEmail.trim()) params.emailOfficial = debouncedEmail.trim();
 
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`, { params });
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/filter`,
+          { params }
+        );
         const { data, totalCount } = res.data || {};
         setFilteredBankers(Array.isArray(data) ? data : []);
         setTotalCount(typeof totalCount === 'number' ? totalCount : 0);
@@ -226,10 +245,20 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     };
 
     fetchFiltered();
-  }, [debouncedLocation, debouncedBanker, debouncedAssociated, debouncedEmail, page, limit]);
+  }, [
+    debouncedLocation,
+    debouncedBanker,
+    debouncedAssociated,
+    debouncedEmail,
+    page,
+    limit,
+    refreshKey // 🔁 refresh trigger
+  ]);
 
   /* ---------- Handlers ---------- */
-  const handleClearSearch = (type: 'location' | 'banker' | 'associated' | 'emailOfficial') => {
+  const handleClearSearch = (
+    type: 'location' | 'banker' | 'associated' | 'emailOfficial'
+  ) => {
     if (type === 'location') {
       setSearchLocation('');
       setSelectedState('');
@@ -258,7 +287,9 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     if (confirm('Are you sure you want to delete this banker?')) {
       try {
         setLoading(true);
-        await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`);
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/delete-directory/${id}`
+        );
         setFilteredBankers((prev) => prev.filter((b) => b._id !== id));
         setTotalCount((prev) => Math.max(prev - 1, 0));
       } catch (err) {
@@ -275,8 +306,13 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     const { _id, ...updatePayload } = editBanker;
     try {
       setLoading(true);
-      await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`, updatePayload);
-      setFilteredBankers((prev) => prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b)));
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/update-directory/${_id}`,
+        updatePayload
+      );
+      setFilteredBankers((prev) =>
+        prev.map((b) => (b._id === _id ? { ...b, ...updatePayload } : b))
+      );
       setEditModalOpen(false);
     } catch (err) {
       console.error('Update failed:', err);
@@ -311,17 +347,22 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     formData.append('file', selectedFile);
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/bulk-upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (evt) => {
-          if (!evt.total) return;
-          setUploadProgress(Math.round((evt.loaded * 100) / evt.total));
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/bulk-upload`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (evt) => {
+            if (!evt.total) return;
+            setUploadProgress(Math.round((evt.loaded * 100) / evt.total));
+          }
         }
-      });
+      );
 
       setOpenUploadModal(false);
       setSelectedFile(null);
       setPage(1);
+      setRefreshKey((k) => k + 1); // 🔁 reload after upload
     } catch (err: any) {
       console.error('Bulk upload failed:', err);
       setUploadError(err?.response?.data?.message || 'Upload failed');
@@ -395,13 +436,17 @@ const BankerOverview = ({ role }: { role: string | null }) => {
   /* ---------- KPIs ---------- */
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
-    filteredBankers.forEach((b) => (b.locationCategories || []).forEach((l) => set.add(l)));
+    filteredBankers.forEach((b) =>
+      (b.locationCategories || []).forEach((l) => set.add(l))
+    );
     return set.size;
   }, [filteredBankers]);
 
   const uniqueProducts = useMemo(() => {
     const set = new Set<string>();
-    filteredBankers.forEach((b) => (b.product || []).forEach((p) => set.add(p)));
+    filteredBankers.forEach((b) =>
+      (b.product || []).forEach((p) => set.add(p))
+    );
     return set.size;
   }, [filteredBankers]);
 
@@ -410,7 +455,11 @@ const BankerOverview = ({ role }: { role: string | null }) => {
     items = [],
     max = 6,
     type = 'location'
-  }: { items?: string[]; max?: number; type?: 'location' | 'product' }) => {
+  }: {
+    items?: string[];
+    max?: number;
+    type?: 'location' | 'product';
+  }) => {
     const visible = items.slice(0, max);
     const rest = Math.max(items.length - max, 0);
 
@@ -420,7 +469,7 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         : { color: '#047857', borderColor: '#6EE7B7', bgcolor: '#ECFDF5' };
 
     return (
-      <Stack direction="row" spacing={0.5}  flexWrap="wrap">
+      <Stack direction="row" spacing={0.5} flexWrap="wrap">
         {visible.map((label, i) => (
           <Chip
             key={`${label}-${i}`}
@@ -472,8 +521,16 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         }}
       >
         <Box sx={{ p: { xs: 2, md: 2 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" >
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: '#fff' }}
+            >
               Banker Directory
             </Typography>
 
@@ -570,20 +627,32 @@ const BankerOverview = ({ role }: { role: string | null }) => {
             }}
             sx={filterFieldSx}
             renderInput={(params) => (
-              <TextField {...params} label="State" size="small" sx={filterFieldSx} />
+              <TextField
+                {...params}
+                label="State"
+                size="small"
+                sx={filterFieldSx}
+              />
             )}
           />
 
           <Autocomplete
             size="small"
             disableClearable
-            options={selectedState ? (CITIES_BY_STATE[selectedState] || []) : []}
+            options={
+              selectedState ? CITIES_BY_STATE[selectedState] || [] : []
+            }
             value={selectedCity}
             onChange={(_, v) => setSelectedCity(v || '')}
             disabled={!selectedState}
             sx={filterFieldSx}
             renderInput={(params) => (
-              <TextField {...params} label="City" size="small" sx={filterFieldSx} />
+              <TextField
+                {...params}
+                label="City"
+                size="small"
+                sx={filterFieldSx}
+              />
             )}
           />
 
@@ -593,7 +662,12 @@ const BankerOverview = ({ role }: { role: string | null }) => {
             value={searchLocation}
             onChange={setSearchLocation}
             onClear={() => handleClearSearch('location')}
-            icon={<LocationOnOutlinedIcon fontSize="small" sx={{ color: '#2563EB' }} />}
+            icon={
+              <LocationOnOutlinedIcon
+                fontSize="small"
+                sx={{ color: '#2563EB' }}
+              />
+            }
             sxOverride={filterFieldSx}
           />
           <SearchTextField
@@ -601,7 +675,12 @@ const BankerOverview = ({ role }: { role: string | null }) => {
             value={searchAssociatedWith}
             onChange={setSearchAssociatedWith}
             onClear={() => handleClearSearch('associated')}
-            icon={<AccountBalanceOutlinedIcon fontSize="small" sx={{ color: '#2563EB' }} />}
+            icon={
+              <AccountBalanceOutlinedIcon
+                fontSize="small"
+                sx={{ color: '#2563EB' }}
+              />
+            }
             sxOverride={filterFieldSx}
           />
           <SearchTextField
@@ -609,7 +688,12 @@ const BankerOverview = ({ role }: { role: string | null }) => {
             value={searchEmailOfficial}
             onChange={setSearchEmailOfficial}
             onClear={() => handleClearSearch('emailOfficial')}
-            icon={<EmailOutlinedIcon fontSize="small" sx={{ color: '#2563EB' }} />}
+            icon={
+              <EmailOutlinedIcon
+                fontSize="small"
+                sx={{ color: '#2563EB' }}
+              />
+            }
             sxOverride={filterFieldSx}
           />
           <SearchTextField
@@ -617,36 +701,93 @@ const BankerOverview = ({ role }: { role: string | null }) => {
             value={searchBanker}
             onChange={setSearchBanker}
             onClear={() => handleClearSearch('banker')}
-            icon={<PersonSearchOutlinedIcon fontSize="small" sx={{ color: '#2563EB' }} />}
+            icon={
+              <PersonSearchOutlinedIcon
+                fontSize="small"
+                sx={{ color: '#2563EB' }}
+              />
+            }
             sxOverride={filterFieldSx}
           />
 
-          {/* Counts right next to search */}
+          {/* Spacer */}
           <Box flex={1} />
 
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            <Chip label={`Bankers: ${totalCount}`} variant="outlined" sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }} />
-            <Chip label={`Locations: ${uniqueLocations}`} variant="outlined" sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }} />
-            <Chip label={`Products: ${uniqueProducts}`} variant="outlined" sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }} />
+          {/* Counts + Showing X of Y */}
+          <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+            <Chip
+              label={`Bankers: ${totalCount}`}
+              variant="outlined"
+              sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }}
+            />
+            <Chip
+              label={`Locations: ${uniqueLocations}`}
+              variant="outlined"
+              sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }}
+            />
+            <Chip
+              label={`Products: ${uniqueProducts}`}
+              variant="outlined"
+              sx={{ bgcolor: '#F9FAFB', color: '#2563EB' }}
+            />
+            {/* 👉 yahan per page vs total filtered count */}
+            <Typography
+              variant="caption"
+              sx={{ color: COLORS.subtle, ml: 1 }}
+            >
+              Showing {filteredBankers.length} of {totalCount} bankers
+            </Typography>
           </Stack>
         </Box>
 
         {/* Active filter chips */}
-        <Box mt={1} display="flex" alignItems="center" gap={1} flexWrap="wrap">
+        <Box
+          mt={1}
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+        >
           {[
             { key: 'State', val: selectedState, clear: () => setSelectedState('') },
             { key: 'City', val: selectedCity, clear: () => setSelectedCity('') },
-            { key: 'Location', val: searchLocation, clear: () => setSearchLocation('') },
-            { key: 'Associated', val: searchAssociatedWith, clear: () => setSearchAssociatedWith('') },
-            { key: 'Official Email', val: searchEmailOfficial, clear: () => setSearchEmailOfficial('') },
-            { key: 'Banker', val: searchBanker, clear: () => setSearchBanker('') }
+            {
+              key: 'Location',
+              val: searchLocation,
+              clear: () => setSearchLocation('')
+            },
+            {
+              key: 'Associated',
+              val: searchAssociatedWith,
+              clear: () => setSearchAssociatedWith('')
+            },
+            {
+              key: 'Official Email',
+              val: searchEmailOfficial,
+              clear: () => setSearchEmailOfficial('')
+            },
+            {
+              key: 'Banker',
+              val: searchBanker,
+              clear: () => setSearchBanker('')
+            }
           ]
             .filter((f) => f.val)
             .map((f) => (
-              <Chip key={f.key} label={`${f.key}: ${f.val}`} onDelete={f.clear} variant="outlined" sx={{ bgcolor: '#F9FAFB' }} />
+              <Chip
+                key={f.key}
+                label={`${f.key}: ${f.val}`}
+                onDelete={f.clear}
+                variant="outlined"
+                sx={{ bgcolor: '#F9FAFB' }}
+              />
             ))}
-          {([selectedState, selectedCity, searchLocation, searchAssociatedWith, searchEmailOfficial, searchBanker].some(Boolean)) && (
-            <Button size="small" startIcon={<ClearAllIcon />} onClick={handleClearAll}>
+          {hasFilters && (
+            <Button
+              size="small"
+              startIcon={<ClearAllIcon />}
+              onClick={handleClearAll}
+            >
               Clear all
             </Button>
           )}
@@ -672,7 +813,10 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                     justifyContent: 'space-between',
                     border: '1px solid #e5e7eb',
                     transition: 'all 0.3s ease',
-                    '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', borderColor: '#cbd5e1' }
+                    '&:hover': {
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                      borderColor: '#cbd5e1'
+                    }
                   }}
                 >
                   <Box display="flex" alignItems="center" mb={2}>
@@ -680,10 +824,16 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                       {banker.bankerName?.charAt(0)?.toUpperCase() || 'B'}
                     </Avatar>
                     <Box>
-                      <Typography variant="h6" sx={{ color: '#2E3A59', fontWeight: 600 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: '#2E3A59', fontWeight: 600 }}
+                      >
                         {banker.bankerName}
                       </Typography>
-                      <Typography variant="subtitle2" sx={{ color: '#6B7280' }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ color: '#6B7280' }}
+                      >
                         {banker.associatedWith}
                       </Typography>
                     </Box>
@@ -692,39 +842,79 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                   <Divider sx={{ mb: 2 }} />
 
                   {/* Locations */}
-                  <Typography variant="subtitle2" sx={{ color: '#2E3A59', fontWeight: 500 }} gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#2E3A59', fontWeight: 500 }}
+                    gutterBottom
+                  >
                     Locations
                   </Typography>
-                  <Tooltip title={(banker.locationCategories || []).join(', ') || '-'} arrow>
+                  <Tooltip
+                    title={(banker.locationCategories || []).join(', ') || '-'}
+                    arrow
+                  >
                     <Box mb={2.25}>
-                      <ChipGroup items={banker.locationCategories || []} max={3} type="location" />
+                      <ChipGroup
+                        items={banker.locationCategories || []}
+                        max={3}
+                        type="location"
+                      />
                     </Box>
                   </Tooltip>
 
                   {/* Products */}
-                  <Typography variant="subtitle2" sx={{ color: '#2E3A59', fontWeight: 500 }} gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: '#2E3A59', fontWeight: 500 }}
+                    gutterBottom
+                  >
                     Products
                   </Typography>
-                  <Tooltip title={(banker.product || []).join(', ') || '-'} arrow>
+                  <Tooltip
+                    title={(banker.product || []).join(', ') || '-'}
+                    arrow
+                  >
                     <Box mb={2}>
-                      <ChipGroup items={banker.product || []} max={6} type="product" />
+                      <ChipGroup
+                        items={banker.product || []}
+                        max={6}
+                        type="product"
+                      />
                     </Box>
                   </Tooltip>
 
                   <Box mb={1}>
-                    <Typography variant="body2" sx={{ color: '#374151', wordBreak: 'break-all' }} gutterBottom>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#374151', wordBreak: 'break-all' }}
+                      gutterBottom
+                    >
                       <strong>Official Email:</strong>{' '}
                       {banker.emailOfficial}
-                      <IconButton size="small" onClick={() => handleCopy(banker.emailOfficial)} sx={{ ml: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleCopy(banker.emailOfficial)}
+                        sx={{ ml: 0.5 }}
+                      >
                         <ContentCopyIcon fontSize="inherit" />
                       </IconButton>
                     </Typography>
 
                     {banker.emailPersonal && (
-                      <Typography variant="body2" sx={{ color: '#374151' }} gutterBottom>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#374151' }}
+                        gutterBottom
+                      >
                         <strong>Personal Email:</strong>{' '}
                         {banker.emailPersonal}
-                        <IconButton size="small" onClick={() => handleCopy(banker.emailPersonal!)} sx={{ ml: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            handleCopy(banker.emailPersonal!)
+                          }
+                          sx={{ ml: 0.5 }}
+                        >
                           <ContentCopyIcon fontSize="inherit" />
                         </IconButton>
                       </Typography>
@@ -733,14 +923,23 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                     <Typography variant="body2" sx={{ color: '#374151' }}>
                       <strong>Contact:</strong>{' '}
                       {banker.contact}
-                      <IconButton size="small" onClick={() => handleCopy(banker.contact)} sx={{ ml: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleCopy(banker.contact)}
+                        sx={{ ml: 0.5 }}
+                      >
                         <ContentCopyIcon fontSize="inherit" />
                       </IconButton>
                     </Typography>
                   </Box>
 
                   {role === 'admin' && (
-                    <Box display="flex" justifyContent="flex-end" gap={0.5} mt={2}>
+                    <Box
+                      display="flex"
+                      justifyContent="flex-end"
+                      gap={0.5}
+                      mt={2}
+                    >
                       <Tooltip title="Edit" arrow>
                         <IconButton
                           onClick={() => handleEdit(banker)}
@@ -826,12 +1025,26 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                     <TableRow>
                       <TableCell>Banker</TableCell>
                       <TableCell>Associated</TableCell>
-                      <TableCell sx={{ minWidth: 260 }}>Locations</TableCell>
-                      <TableCell sx={{ minWidth: 260 }}>Products</TableCell>
-                      <TableCell sx={{ minWidth: 220 }}>Official Email</TableCell>
-                      <TableCell sx={{ minWidth: 180 }}>Personal Email</TableCell>
-                      <TableCell sx={{ minWidth: 160 }}>Contact</TableCell>
-                      {role === 'admin' && <TableCell sx={{ minWidth: 120 }}>Actions</TableCell>}
+                      <TableCell sx={{ minWidth: 260 }}>
+                        Locations
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 260 }}>
+                        Products
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 220 }}>
+                        Official Email
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 180 }}>
+                        Personal Email
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 160 }}>
+                        Contact
+                      </TableCell>
+                      {role === 'admin' && (
+                        <TableCell sx={{ minWidth: 120 }}>
+                          Actions
+                        </TableCell>
+                      )}
                     </TableRow>
                   </TableHead>
 
@@ -841,29 +1054,60 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         key={b._id}
                         hover
                         sx={{
-                          transition: 'background 0.15s ease, transform 0.15s ease',
+                          transition:
+                            'background 0.15s ease, transform 0.15s ease',
                           '&:hover': { background: '#F8FAFC' }
                         }}
                       >
                         {/* Banker */}
                         <TableCell sx={{ py: 2.1 }}>
-                          <Stack direction="row" spacing={1} alignItems="center" maxWidth={280}>
-                            <Avatar sx={{ bgcolor: '#2563EB', width: 28, height: 28 }}>
-                              {b.bankerName?.charAt(0)?.toUpperCase() || 'B'}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            maxWidth={280}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor: '#2563EB',
+                                width: 28,
+                                height: 28
+                              }}
+                            >
+                              {b.bankerName?.charAt(0)?.toUpperCase() ||
+                                'B'}
                             </Avatar>
                             <Box sx={{ minWidth: 0 }}>
-                              <Tooltip title={b.bankerName || '-'} arrow>
+                              <Tooltip
+                                title={b.bankerName || '-'}
+                                arrow
+                              >
                                 <Typography
                                   variant="body2"
-                                  sx={{ fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: '#111827',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
                                 >
                                   {b.bankerName}
                                 </Typography>
                               </Tooltip>
-                              <Tooltip title={b.associatedWith || '-'} arrow>
+                              <Tooltip
+                                title={b.associatedWith || '-'}
+                                arrow
+                              >
                                 <Typography
                                   variant="caption"
-                                  sx={{ color: '#6B7280', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                  sx={{
+                                    color: '#6B7280',
+                                    display: 'block',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
                                 >
                                   {b.associatedWith || '-'}
                                 </Typography>
@@ -874,8 +1118,19 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
                         {/* Associated With */}
                         <TableCell sx={{ py: 1.1, maxWidth: 220 }}>
-                          <Tooltip title={b.associatedWith || '-'} arrow>
-                            <span style={{ display: 'inline-block', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <Tooltip
+                            title={b.associatedWith || '-'}
+                            arrow
+                          >
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                maxWidth: 220,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
                               {b.associatedWith || '-'}
                             </span>
                           </Tooltip>
@@ -883,30 +1138,54 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
                         {/* Locations */}
                         <TableCell sx={{ py: 1.1 }}>
-                          <Tooltip title={(b.locationCategories || []).join(', ') || '-'} arrow>
+                          <Tooltip
+                            title={
+                              (b.locationCategories || []).join(', ') ||
+                              '-'
+                            }
+                            arrow
+                          >
                             <span>
-                              <Stack direction="row" spacing={0.5}  flexWrap="wrap">
-                                {(b.locationCategories || []).slice(0, 4).map((loc, i) => (
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                flexWrap="wrap"
+                              >
+                                {(b.locationCategories || [])
+                                  .slice(0, 4)
+                                  .map((loc, i) => (
+                                    <Chip
+                                      key={i}
+                                      label={loc}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 22,
+                                        '& .MuiChip-label': {
+                                          px: 1,
+                                          fontSize: 11
+                                        },
+                                        color: '#2563EB',
+                                        borderColor: '#C7D2FE',
+                                        bgcolor: '#EEF2FF'
+                                      }}
+                                    />
+                                  ))}
+                                {(b.locationCategories?.length || 0) >
+                                  4 && (
                                   <Chip
-                                    key={i}
-                                    label={loc}
                                     size="small"
+                                    label={`+${
+                                      b.locationCategories!.length - 4
+                                    }`}
                                     variant="outlined"
                                     sx={{
                                       height: 22,
-                                      '& .MuiChip-label': { px: 1, fontSize: 11 },
-                                      color: '#2563EB',
-                                      borderColor: '#C7D2FE',
-                                      bgcolor: '#EEF2FF'
+                                      '& .MuiChip-label': {
+                                        px: 1,
+                                        fontSize: 11
+                                      }
                                     }}
-                                  />
-                                ))}
-                                {(b.locationCategories?.length || 0) > 4 && (
-                                  <Chip
-                                    size="small"
-                                    label={`+${(b.locationCategories!.length - 4)}`}
-                                    variant="outlined"
-                                    sx={{ height: 22, '& .MuiChip-label': { px: 1, fontSize: 11 } }}
                                   />
                                 )}
                               </Stack>
@@ -916,26 +1195,51 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
                         {/* Products */}
                         <TableCell sx={{ py: 1.1 }}>
-                          <Tooltip title={(b.product || []).join(', ') || '-'} arrow>
+                          <Tooltip
+                            title={(b.product || []).join(', ') || '-'}
+                            arrow
+                          >
                             <span>
-                              <Stack direction="row" spacing={0.5}  flexWrap="wrap">
-                                {(b.product || []).slice(0, 4).map((p, i) => (
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                flexWrap="wrap"
+                              >
+                                {(b.product || [])
+                                  .slice(0, 4)
+                                  .map((p, i) => (
+                                    <Chip
+                                      key={i}
+                                      label={p}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 22,
+                                        '& .MuiChip-label': {
+                                          px: 1,
+                                          fontSize: 11
+                                        },
+                                        color: '#065F46',
+                                        borderColor: '#A7F3D0',
+                                        bgcolor: '#ECFDF5'
+                                      }}
+                                    />
+                                  ))}
+                                {(b.product?.length || 0) > 4 && (
                                   <Chip
-                                    key={i}
-                                    label={p}
                                     size="small"
+                                    label={`+${
+                                      b.product!.length - 4
+                                    }`}
                                     variant="outlined"
                                     sx={{
                                       height: 22,
-                                      '& .MuiChip-label': { px: 1, fontSize: 11 },
-                                      color: '#065F46',
-                                      borderColor: '#A7F3D0',
-                                      bgcolor: '#ECFDF5'
+                                      '& .MuiChip-label': {
+                                        px: 1,
+                                        fontSize: 11
+                                      }
                                     }}
                                   />
-                                ))}
-                                {(b.product?.length || 0) > 4 && (
-                                  <Chip size="small" label={`+${(b.product!.length - 4)}`} variant="outlined" sx={{ height: 22, '& .MuiChip-label': { px: 1, fontSize: 11 } }} />
                                 )}
                               </Stack>
                             </span>
@@ -943,9 +1247,17 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         </TableCell>
 
                         {/* Official Email */}
-                        <TableCell sx={{ py: 1.1, wordBreak: 'break-all' }}>
+                        <TableCell
+                          sx={{ py: 1.1, wordBreak: 'break-all' }}
+                        >
                           {b.emailOfficial ? (
-                            <a href={`mailto:${b.emailOfficial}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
+                            <a
+                              href={`mailto:${b.emailOfficial}`}
+                              style={{
+                                color: '#2563EB',
+                                textDecoration: 'none'
+                              }}
+                            >
                               {b.emailOfficial}
                             </a>
                           ) : (
@@ -954,9 +1266,17 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         </TableCell>
 
                         {/* Personal Email */}
-                        <TableCell sx={{ py: 1.1, wordBreak: 'break-all' }}>
+                        <TableCell
+                          sx={{ py: 1.1, wordBreak: 'break-all' }}
+                        >
                           {b.emailPersonal ? (
-                            <a href={`mailto:${b.emailPersonal}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
+                            <a
+                              href={`mailto:${b.emailPersonal}`}
+                              style={{
+                                color: '#2563EB',
+                                textDecoration: 'none'
+                              }}
+                            >
                               {b.emailPersonal}
                             </a>
                           ) : (
@@ -967,7 +1287,13 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         {/* Contact */}
                         <TableCell sx={{ py: 1.1 }}>
                           {b.contact ? (
-                            <a href={`tel:${b.contact}`} style={{ color: '#2563EB', textDecoration: 'none' }}>
+                            <a
+                              href={`tel:${b.contact}`}
+                              style={{
+                                color: '#2563EB',
+                                textDecoration: 'none'
+                              }}
+                            >
                               {b.contact}
                             </a>
                           ) : (
@@ -979,10 +1305,21 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                         {role === 'admin' && (
                           <TableCell sx={{ py: 0.6 }}>
                             <Stack direction="row" spacing={1}>
-                              <Button size="small" variant="outlined" onClick={() => handleEdit(b)} startIcon={<EditOutlinedIcon />}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => handleEdit(b)}
+                                startIcon={<EditOutlinedIcon />}
+                              >
                                 Edit
                               </Button>
-                              <Button size="small" color="error" variant="outlined" onClick={() => handleDelete(b._id)} startIcon={<DeleteOutlineIcon />}>
+                              <Button
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                                onClick={() => handleDelete(b._id)}
+                                startIcon={<DeleteOutlineIcon />}
+                              >
                                 Delete
                               </Button>
                             </Stack>
@@ -993,7 +1330,11 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
                     {filteredBankers.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={role === 'admin' ? 8 : 7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                        <TableCell
+                          colSpan={role === 'admin' ? 8 : 7}
+                          align="center"
+                          sx={{ py: 6, color: 'text.secondary' }}
+                        >
                           No bankers match your search criteria.
                         </TableCell>
                       </TableRow>
@@ -1007,7 +1348,14 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
         {/* Footer Bar */}
         {totalCount > 0 && (
-          <Grid item xs={12} mt={2} display="flex" justifyContent="space-between" alignItems="center">
+          <Grid
+            item
+            xs={12}
+            mt={2}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Pagination
               count={Math.ceil(totalCount / limit)}
               page={page}
@@ -1015,7 +1363,11 @@ const BankerOverview = ({ role }: { role: string | null }) => {
               color="primary"
               sx={{
                 '& .MuiPaginationItem-root': { color: COLORS.primary },
-                '& .Mui-selected': { backgroundColor: COLORS.primary, color: '#fff', '&:hover': { backgroundColor: COLORS.primaryDark } }
+                '& .Mui-selected': {
+                  backgroundColor: COLORS.primary,
+                  color: '#fff',
+                  '&:hover': { backgroundColor: COLORS.primaryDark }
+                }
               }}
             />
 
@@ -1037,10 +1389,17 @@ const BankerOverview = ({ role }: { role: string | null }) => {
                   backgroundColor: '#f9fafb',
                   '& fieldset': { borderColor: '#cbd5e1' },
                   '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: COLORS.primary }
+                  '&.Mui-focused fieldset': {
+                    borderColor: COLORS.primary
+                  }
                 },
-                '& .MuiInputLabel-root': { color: COLORS.text, fontWeight: 500 },
-                '& .Mui-focused .MuiInputLabel-root': { color: COLORS.primary }
+                '& .MuiInputLabel-root': {
+                  color: COLORS.text,
+                  fontWeight: 500
+                },
+                '& .Mui-focused .MuiInputLabel-root': {
+                  color: COLORS.primary
+                }
               }}
             >
               {[6, 9, 12, 15, 20].map((val) => (
@@ -1053,8 +1412,23 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         )}
 
         {/* Modals */}
-        <Dialog open={openFormModal} onClose={() => setOpenFormModal(false)} maxWidth="md" fullWidth scroll="body" PaperProps={{ sx: { borderRadius: 3, background: '#FFF' } }}>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: COLORS.primary }}>
+        <Dialog
+          open={openFormModal}
+          onClose={() => setOpenFormModal(false)}
+          maxWidth="md"
+          fullWidth
+          scroll="body"
+          PaperProps={{ sx: { borderRadius: 3, background: '#FFF' } }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontWeight: 700,
+              color: COLORS.primary
+            }}
+          >
             Add Banker
             <IconButton onClick={() => setOpenFormModal(false)}>
               <CloseIcon />
@@ -1065,13 +1439,29 @@ const BankerOverview = ({ role }: { role: string | null }) => {
               onSuccess={() => {
                 setOpenFormModal(false);
                 setPage(1);
+                setRefreshKey((k) => k + 1); // 🔁 reload after add
               }}
             />
           </DialogContent>
         </Dialog>
 
-        <Dialog open={openUploadModal} onClose={() => setOpenUploadModal(false)} maxWidth="sm" fullWidth scroll="body" PaperProps={{ sx: { borderRadius: 3, background: '#fff' } }}>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: COLORS.primary }}>
+        <Dialog
+          open={openUploadModal}
+          onClose={() => setOpenUploadModal(false)}
+          maxWidth="sm"
+          fullWidth
+          scroll="body"
+          PaperProps={{ sx: { borderRadius: 3, background: '#fff' } }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontWeight: 700,
+              color: COLORS.primary
+            }}
+          >
             Upload Excel – Banker Directory
             <IconButton onClick={() => setOpenUploadModal(false)}>
               <CloseIcon />
@@ -1084,11 +1474,24 @@ const BankerOverview = ({ role }: { role: string | null }) => {
               </Typography>
 
               <Box display="flex" gap={1}>
-                <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />}>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                >
                   Choose File
-                  <input hidden type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} />
+                  <input
+                    hidden
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileChange}
+                  />
                 </Button>
-                <Button variant="text" startIcon={<FileDownloadIcon />} onClick={downloadCsvTemplate}>
+                <Button
+                  variant="text"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={downloadCsvTemplate}
+                >
                   CSV Template
                 </Button>
               </Box>
@@ -1101,8 +1504,15 @@ const BankerOverview = ({ role }: { role: string | null }) => {
 
               {uploading && (
                 <Box>
-                  <LinearProgress variant="determinate" value={uploadProgress} />
-                  <Typography mt={0.5} variant="caption" color="text.secondary">
+                  <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                  />
+                  <Typography
+                    mt={0.5}
+                    variant="caption"
+                    color="text.secondary"
+                  >
                     Uploading… {uploadProgress}%
                   </Typography>
                 </Box>
@@ -1117,20 +1527,39 @@ const BankerOverview = ({ role }: { role: string | null }) => {
               <Divider />
 
               <Stack spacing={0.5}>
-                <Typography variant="subtitle2">Expected headers (row 1):</Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                  bankerName, associatedWith, locationCategories, emailOfficial, emailPersonal, contact, product
+                <Typography variant="subtitle2">
+                  Expected headers (row 1):
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontFamily: 'monospace' }}
+                >
+                  bankerName, associatedWith, locationCategories,
+                  emailOfficial, emailPersonal, contact, product
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  • <strong>locationCategories</strong> and <strong>product</strong> can be comma-separated lists.
+                  • <strong>locationCategories</strong> and{' '}
+                  <strong>product</strong> can be comma-separated lists.
                 </Typography>
               </Stack>
 
-              <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
-                <Button variant="outlined" onClick={() => setOpenUploadModal(false)}>
+              <Box
+                display="flex"
+                justifyContent="flex-end"
+                gap={1}
+                mt={1}
+              >
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenUploadModal(false)}
+                >
                   Cancel
                 </Button>
-                <Button variant="contained" onClick={handleUpload} disabled={!selectedFile || uploading}>
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  disabled={!selectedFile || uploading}
+                >
                   {uploading ? 'Uploading…' : 'Upload & Import'}
                 </Button>
               </Box>
@@ -1155,7 +1584,11 @@ const BankerOverview = ({ role }: { role: string | null }) => {
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snack.severity} variant="filled" onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        >
           {snack.msg}
         </Alert>
       </Snackbar>
@@ -1183,7 +1616,10 @@ const LendersTasks = () => {
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ backgroundColor: COLORS.canvas, minHeight: '100vh', py: 3 }}>
+      <Container
+        maxWidth="lg"
+        sx={{ backgroundColor: COLORS.canvas, minHeight: '100vh', py: 3 }}
+      >
         <Grid container>
           <Grid item xs={12}>
             <BankerOverview role={role} />
@@ -1196,5 +1632,7 @@ const LendersTasks = () => {
 };
 
 // @ts-ignore
-LendersTasks.getLayout = (page: React.ReactElement) => <SidebarLayout>{page}</SidebarLayout>;
+LendersTasks.getLayout = (page: React.ReactElement) => (
+  <SidebarLayout>{page}</SidebarLayout>
+);
 export default LendersTasks;
