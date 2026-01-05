@@ -97,7 +97,7 @@ type ActiveFilter = 'stateCity' | 'associated' | 'emailOfficial' | 'banker';
 
 const BankerOverview = ({ role }: { role: string | null }) => {
   const [filteredBankers, setFilteredBankers] = useState<Banker[]>([]);
-const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // filters
   const [selectedState, setSelectedState] = useState<string>('');
@@ -123,7 +123,8 @@ const [refreshKey, setRefreshKey] = useState(0);
   const [limit, setLimit] = useState(12);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [openFormModal, setOpenFormModal] = useState(false);
+  const [openFormModal, setOpenFormModal] = useState(false); // admin direct add
+  const [openRequestModal, setOpenRequestModal] = useState(false); // user suggestion
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // normalize role for admin checks
@@ -250,7 +251,7 @@ const [refreshKey, setRefreshKey] = useState(0);
     debouncedEmail,
     page,
     limit,
-    refreshKey  
+    refreshKey
   ]);
 
   /* ---------- Handlers ---------- */
@@ -421,6 +422,7 @@ const [refreshKey, setRefreshKey] = useState(0);
         msg: 'Upload completed successfully',
         severity: 'success'
       });
+      setRefreshKey((x) => x + 1);
     } catch (err: any) {
       console.error('Bulk upload failed:', err);
       const msg = err?.response?.data?.message || 'Upload failed';
@@ -634,7 +636,8 @@ const [refreshKey, setRefreshKey] = useState(0);
             </Typography>
           </Box>
 
-          {role === 'admin' && (
+          {/* Upload (sirf admin) */}
+          {isAdmin && (
             <Button
               variant="contained"
               size="small"
@@ -700,23 +703,42 @@ const [refreshKey, setRefreshKey] = useState(0);
             Export
           </Button>
 
-          {/* Add */}
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-            onClick={() => setOpenFormModal(true)}
-            sx={{
-              textTransform: 'none',
-              fontSize: 12,
-              borderRadius: 999,
-              bgcolor: '#22C55E',
-              px: 1.9,
-              '&:hover': { bgcolor: '#16A34A' }
-            }}
-          >
-            Add Banker
-          </Button>
+          {/* Add / Suggest – role based */}
+          {isAdmin ? (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+              onClick={() => setOpenFormModal(true)}
+              sx={{
+                textTransform: 'none',
+                fontSize: 12,
+                borderRadius: 999,
+                bgcolor: '#22C55E',
+                px: 1.9,
+                '&:hover': { bgcolor: '#16A34A' }
+              }}
+            >
+              Add Banker
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+              onClick={() => setOpenRequestModal(true)}
+              sx={{
+                textTransform: 'none',
+                fontSize: 12,
+                borderRadius: 999,
+                bgcolor: '#38BDF8',
+                px: 1.9,
+                '&:hover': { bgcolor: '#0EA5E9' }
+              }}
+            >
+              Suggest Banker
+            </Button>
+          )}
         </Stack>
       </Paper>
 
@@ -1386,7 +1408,7 @@ const [refreshKey, setRefreshKey] = useState(0);
                         <Box
                           display="flex"
                           alignItems="center"
-                          justifyContent="space_between"
+                          justifyContent="space-between"
                           gap={1}
                         >
                           <Typography
@@ -2062,6 +2084,8 @@ const [refreshKey, setRefreshKey] = useState(0);
         )}
 
         {/* Modals */}
+
+        {/* Admin – direct add to main directory */}
         <Dialog
           open={openFormModal}
           onClose={() => setOpenFormModal(false)}
@@ -2081,18 +2105,63 @@ const [refreshKey, setRefreshKey] = useState(0);
               color: COLORS.primary
             }}
           >
-            Add Banker
+            Add Banker (Admin)
             <IconButton onClick={() => setOpenFormModal(false)}>
               <CloseIcon />
             </IconButton>
           </DialogTitle>
           <DialogContent dividers>
             <DirectoryForm
+              mode="admin"
               onSuccess={() => {
                 setOpenFormModal(false);
                 setPage(1);
-                  setRefreshKey(x => x + 1);
+                setRefreshKey(x => x + 1);
+                setSnack({
+                  open: true,
+                  msg: 'Banker added to directory',
+                  severity: 'success'
+                });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
 
+        {/* User – suggestion request (goes to review table only) */}
+        <Dialog
+          open={openRequestModal}
+          onClose={() => setOpenRequestModal(false)}
+          maxWidth="md"
+          fullWidth
+          scroll="body"
+          PaperProps={{
+            sx: { borderRadius: 3, background: '#FFF' }
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontWeight: 700,
+              color: COLORS.primary
+            }}
+          >
+            Suggest Banker for Directory
+            <IconButton onClick={() => setOpenRequestModal(false)}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <DirectoryForm
+              mode="user"
+              onSuccess={() => {
+                setOpenRequestModal(false);
+                setSnack({
+                  open: true,
+                  msg: 'Submitted for admin verification. It will appear after approval.',
+                  severity: 'success'
+                });
               }}
             />
           </DialogContent>

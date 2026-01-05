@@ -17,11 +17,14 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
+type DirectoryFormMode = 'admin' | 'user';
+
 interface DirectoryFormProps {
   onSuccess: () => void;
+  mode?: DirectoryFormMode; // ✅ default admin
 }
 
-const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
+const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess, mode = 'admin' }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -29,7 +32,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     bankerName: '',
     associatedWith: '',
     state: '',
-    cityInput: '',            // user types city text yaha
+    cityInput: '', // user types city text yaha
     cityList: [] as string[], // chips / multi city
     emailOfficial: '',
     emailPersonal: '',
@@ -72,7 +75,6 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     }));
   };
 
-  // Desktop blur use karega
   const handleCityBlur = () => {
     addCityFromInput();
   };
@@ -116,9 +118,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     if (!form.state.trim()) return 'State is required.';
 
     const finalCityList =
-      form.cityList.length > 0
-        ? form.cityList
-        : parseCommaList(form.cityInput);
+      form.cityList.length > 0 ? form.cityList : parseCommaList(form.cityInput);
 
     if (!finalCityList.length) return 'At least one City is required.';
     if (!form.emailOfficial.trim()) return 'Official Email is required.';
@@ -147,27 +147,44 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     const payload: any = {
       bankerName: form.bankerName.trim(),
       associatedWith: form.associatedWith.trim(),
-      state: form.state.trim(),               // ✅ string
-      city: finalCityList.join(', '),         // ✅ single string
+      state: form.state.trim(), // ✅ string
+      city: finalCityList.join(', '), // ✅ single string
       emailOfficial: form.emailOfficial.trim(),
       emailPersonal: form.emailPersonal.trim() || undefined,
       contact: form.contact.trim(),
-      product: finalProductList
-      // lastCurrentDesignation: form.lastCurrentDesignation.trim() || undefined
-      // 👉 DTO me add kar doge to upar line uncomment kar sakte ho
+      product: finalProductList,
+      lastCurrentDesignation:
+        form.lastCurrentDesignation.trim() || undefined
     };
 
     try {
       setLoading(true);
 
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/banker-directory/create-directories`,
-        payload
-      );
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      console.log('Banker directory created:', res.data);
+      const endpoint =
+        mode === 'admin'
+          ? `${baseUrl}/banker-directory/create-directories`
+          : `${baseUrl}/banker-directory/request-directory`;
 
-      // 👉 Pehle snackbar dikhao
+      // ✅ user mode me JWT header bhejna (taaki backend createdBy set kare)
+      const headers: Record<string, string> = {};
+      if (mode === 'user') {
+        const token =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('token')
+            : null;
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+
+      const res = await axios.post(endpoint, payload, {
+        headers
+      });
+      console.log('Banker directory response:', res.data);
+
+      // ✅ Pehle snackbar dikhao
       setSuccessOpen(true);
 
       // form reset
@@ -218,6 +235,17 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
     }
   };
 
+  const isAdmin = mode === 'admin';
+
+  const title = isAdmin ? 'Add Banker Entry' : 'Suggest Banker for Directory';
+  const subtitle = isAdmin
+    ? 'This will create a new record directly in Banker Directory.'
+    : 'This suggestion will go to Admin for verification. It will appear in directory only after approval.';
+
+  const successMessage = isAdmin
+    ? 'Banker added to directory!'
+    : 'Banker suggestion submitted for admin review!';
+
   return (
     <Paper
       elevation={0}
@@ -242,10 +270,10 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
             gutterBottom
             sx={{ fontWeight: 700, color: '#111827' }}
           >
-            Add Banker Entry
+            {title}
           </Typography>
           <Typography variant="body2" sx={{ color: '#6B7280' }}>
-            This will create a new record in <b>Banker Directory</b>.
+            {subtitle}
           </Typography>
         </Box>
       </Box>
@@ -301,32 +329,30 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
         {/* Cities */}
         <Grid item xs={12} sm={6}>
           {isMobile ? (
-            <>
-              <Box display="flex" gap={1}>
-                <TextField
-                  fullWidth
-                  label="City / Cities"
-                  name="cityInput"
-                  placeholder="e.g. Delhi, Noida"
-                  value={form.cityInput}
-                  onChange={handleChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCityFromInput();
-                    }
-                  }}
-                  sx={textFieldStyles}
-                />
-                <Button
-                  variant="contained"
-                  onClick={addCityFromInput}
-                  sx={{ borderRadius: 999, whiteSpace: 'nowrap' }}
-                >
-                  Add
-                </Button>
-              </Box>
-            </>
+            <Box display="flex" gap={1}>
+              <TextField
+                fullWidth
+                label="City / Cities"
+                name="cityInput"
+                placeholder="e.g. Delhi, Noida"
+                value={form.cityInput}
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCityFromInput();
+                  }
+                }}
+                sx={textFieldStyles}
+              />
+              <Button
+                variant="contained"
+                onClick={addCityFromInput}
+                sx={{ borderRadius: 999, whiteSpace: 'nowrap' }}
+              >
+                Add
+              </Button>
+            </Box>
           ) : (
             <TextField
               fullWidth
@@ -500,15 +526,23 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
                 borderRadius: 999,
                 textTransform: 'none',
                 fontWeight: 700,
-                background:
-                  'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                background: isAdmin
+                  ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
+                  : 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)',
                 '&:hover': {
-                  background:
-                    'linear-gradient(135deg, #16A34A 0%, #15803D 100%)'
+                  background: isAdmin
+                    ? 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)'
+                    : 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)'
                 }
               }}
             >
-              {loading ? 'Saving…' : 'Save Banker'}
+              {loading
+                ? isAdmin
+                  ? 'Saving…'
+                  : 'Submitting…'
+                : isAdmin
+                ? 'Save Banker'
+                : 'Submit Suggestion'}
             </Button>
           </Box>
         </Grid>
@@ -534,7 +568,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ onSuccess }) => {
           variant="filled"
           sx={{ width: '100%' }}
         >
-          Banker added to directory!
+          {successMessage}
         </Alert>
       </Snackbar>
     </Paper>
